@@ -15,7 +15,6 @@
 #include <vector>
 
 #include <assert.h>
-#include "real.h"
 
 namespace fasttext {
 

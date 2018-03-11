@@ -53,18 +53,18 @@ void QMatrix::quantize(const Matrix& matrix) {
 }
 
 void QMatrix::addToVector(Vector& x, int32_t t) const {
-  real norm = 1;
+  float norm = 1;
   if (qnorm_) {
     norm = npq_->get_centroids(0, norm_codes_[t])[0];
   }
   pq_->addcode(x, codes_.data(), t, norm);
 }
 
-real QMatrix::dotRow(const Vector& vec, int64_t i) const {
+float QMatrix::dotRow(const Vector& vec, int64_t i) const {
   assert(i >= 0);
   assert(i < m_);
   assert(vec.size() == n_);
-  real norm = 1;
+  float norm = 1;
   if (qnorm_) {
     norm = npq_->get_centroids(0, norm_codes_[i])[0];
   }

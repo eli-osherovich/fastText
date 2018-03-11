@@ -24,7 +24,6 @@
 #include "matrix.h"
 #include "model.h"
 #include "qmatrix.h"
-#include "real.h"
 #include "utils.h"
 #include "vector.h"
 
@@ -44,7 +43,7 @@ class FastText {
   std::shared_ptr<Model> model_;
 
   std::atomic<int64_t> tokenCount_;
-  std::atomic<real> loss_;
+  std::atomic<float> loss_;
 
   clock_t start_;
   void signModel(std::ostream&);
@@ -81,25 +80,25 @@ class FastText {
   void saveModel();
   void loadModel(std::istream&);
   void loadModel(const std::string&);
-  void printInfo(real, real, std::ostream&);
+  void printInfo(float, float, std::ostream&);
 
   void supervised(
       Model&,
-      real,
+      float,
       const std::vector<int32_t>&,
       const std::vector<int32_t>&);
-  void cbow(Model&, real, const std::vector<int32_t>&);
-  void skipgram(Model&, real, const std::vector<int32_t>&);
+  void cbow(Model&, float, const std::vector<int32_t>&);
+  void skipgram(Model&, float, const std::vector<int32_t>&);
   std::vector<int32_t> selectEmbeddings(int32_t) const;
   void getSentenceVector(std::istream&, Vector&);
   void quantize(const Args);
-  std::tuple<int64_t, double, double> test(std::istream&, int32_t, real = 0.0);
-  void predict(std::istream&, int32_t, bool, real = 0.0);
+  std::tuple<int64_t, double, double> test(std::istream&, int32_t, float = 0.0);
+  void predict(std::istream&, int32_t, bool, float = 0.0);
   void predict(
       std::istream&,
       int32_t,
-      std::vector<std::pair<real, std::string>>&,
-      real = 0.0) const;
+      std::vector<std::pair<float, std::string>>&,
+      float = 0.0) const;
   void ngramVectors(std::string);
   void precomputeWordVectors(Matrix&);
   void findNN(
@@ -107,7 +106,7 @@ class FastText {
       const Vector&,
       int32_t,
       const std::set<std::string>&,
-      std::vector<std::pair<real, std::string>>& results);
+      std::vector<std::pair<float, std::string>>& results);
   void analogies(int32_t);
   void trainThread(int32_t);
   void train(const Args);

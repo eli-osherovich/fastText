@@ -16,8 +16,6 @@
 #include <vector>
 #include <memory>
 
-#include "real.h"
-
 #include "matrix.h"
 #include "vector.h"
 
@@ -52,7 +50,7 @@ class QMatrix {
     void quantize(const Matrix&);
 
     void addToVector(Vector& x, int32_t t) const;
-    real dotRow(const Vector&, int64_t) const;
+    float dotRow(const Vector&, int64_t) const;
 
     void save(std::ostream&);
     void load(std::istream&);

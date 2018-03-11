@@ -18,7 +18,6 @@
 #include <unordered_map>
 
 #include "args.h"
-#include "real.h"
 
 namespace fasttext {
 
@@ -49,7 +48,7 @@ class Dictionary {
     std::vector<int32_t> word2int_;
     std::vector<entry> words_;
 
-    std::vector<real> pdiscard_;
+    std::vector<float> pdiscard_;
     int32_t size_;
     int32_t nwords_;
     int32_t nlabels_;
@@ -77,7 +76,7 @@ class Dictionary {
     int32_t getId(const std::string&, uint32_t h) const;
     entry_type getType(int32_t) const;
     entry_type getType(const std::string&) const;
-    bool discard(int32_t, real) const;
+    bool discard(int32_t, float) const;
     std::string getWord(int32_t) const;
     const std::vector<int32_t>& getSubwords(int32_t) const;
     const std::vector<int32_t> getSubwords(const std::string&) const;

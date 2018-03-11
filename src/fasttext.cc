@@ -238,7 +238,7 @@ void FastText::loadModel(std::istream& in) {
   }
 }
 
-void FastText::printInfo(real progress, real loss, std::ostream& log_stream) {
+void FastText::printInfo(float progress, float loss, std::ostream& log_stream) {
   // clock_t might also only be 32bits wide on some systems
   double t = double(clock() - start_) / double(CLOCKS_PER_SEC);
   double lr = args_->lr * (1.0 - progress);
@@ -324,7 +324,7 @@ void FastText::quantize(const Args qargs) {
 
 void FastText::supervised(
     Model& model,
-    real lr,
+    float lr,
     const std::vector<int32_t>& line,
     const std::vector<int32_t>& labels) {
   if (labels.size() == 0 || line.size() == 0) return;
@@ -333,7 +333,7 @@ void FastText::supervised(
   model.update(line, labels[i], lr);
 }
 
-void FastText::cbow(Model& model, real lr,
+void FastText::cbow(Model& model, float lr,
                     const std::vector<int32_t>& line) {
   std::vector<int32_t> bow;
   std::uniform_int_distribution<> uniform(1, args_->ws);
@@ -350,7 +350,7 @@ void FastText::cbow(Model& model, real lr,
   }
 }
 
-void FastText::skipgram(Model& model, real lr,
+void FastText::skipgram(Model& model, float lr,
                         const std::vector<int32_t>& line) {
   std::uniform_int_distribution<> uniform(1, args_->ws);
   for (int32_t w = 0; w < line.size(); w++) {
@@ -367,7 +367,7 @@ void FastText::skipgram(Model& model, real lr,
 std::tuple<int64_t, double, double> FastText::test(
     std::istream& in,
     int32_t k,
-    real threshold) {
+    float threshold) {
   int32_t nexamples = 0, nlabels = 0, npredictions = 0;
   double precision = 0.0;
   std::vector<int32_t> line, labels;
@@ -375,7 +375,7 @@ std::tuple<int64_t, double, double> FastText::test(
   while (in.peek() != EOF) {
     dict_->getLine(in, line, labels);
     if (labels.size() > 0 && line.size() > 0) {
-      std::vector<std::pair<real, int32_t>> modelPredictions;
+      std::vector<std::pair<float, int32_t>> modelPredictions;
       model_->predict(line, k, threshold, modelPredictions);
       for (auto it = modelPredictions.cbegin(); it != modelPredictions.cend(); it++) {
         if (std::find(labels.begin(), labels.end(), it->second) != labels.end()) {
@@ -394,8 +394,8 @@ std::tuple<int64_t, double, double> FastText::test(
 void FastText::predict(
   std::istream& in,
   int32_t k,
-  std::vector<std::pair<real,std::string>>& predictions,
-  real threshold
+  std::vector<std::pair<float,std::string>>& predictions,
+  float threshold
 ) const {
   std::vector<int32_t> words, labels;
   predictions.clear();
@@ -404,7 +404,7 @@ void FastText::predict(
   if (words.empty()) return;
   Vector hidden(args_->dim);
   Vector output(dict_->nlabels());
-  std::vector<std::pair<real,int32_t>> modelPredictions;
+  std::vector<std::pair<float,int32_t>> modelPredictions;
   model_->predict(words, k, threshold, modelPredictions, hidden, output);
   for (auto it = modelPredictions.cbegin(); it != modelPredictions.cend(); it++) {
     predictions.push_back(std::make_pair(it->first, dict_->getLabel(it->second)));
@@ -415,9 +415,9 @@ void FastText::predict(
   std::istream& in,
   int32_t k,
   bool print_prob,
-  real threshold
+  float threshold
 ) {
-  std::vector<std::pair<real,std::string>> predictions;
+  std::vector<std::pair<float,std::string>> predictions;
   while (in.peek() != EOF) {
     predictions.clear();
     predict(in, k, predictions, threshold);
@@ -460,7 +460,7 @@ void FastText::getSentenceVector(
     int32_t count = 0;
     while (iss >> word) {
       getWordVector(vec, word);
-      real norm = vec.norm();
+      float norm = vec.norm();
       if (norm > 0) {
         vec.mul(1.0 / norm);
         svec.addVector(vec);
@@ -497,7 +497,7 @@ void FastText::precomputeWordVectors(Matrix& wordVectors) {
   for (int32_t i = 0; i < dict_->nwords(); i++) {
     std::string word = dict_->getWord(i);
     getWordVector(vec, word);
-    real norm = vec.norm();
+    float norm = vec.norm();
     if (norm > 0) {
       wordVectors.addRow(vec, i, 1.0 / norm);
     }
@@ -509,24 +509,24 @@ void FastText::findNN(
     const Vector& queryVec,
     int32_t k,
     const std::set<std::string>& banSet,
-    std::vector<std::pair<real, std::string>>& results) {
+    std::vector<std::pair<float, std::string>>& results) {
   results.clear();
-  std::priority_queue<std::pair<real, std::string>> heap;
-  real queryNorm = queryVec.norm();
+  std::priority_queue<std::pair<float, std::string>> heap;
+  float queryNorm = queryVec.norm();
   if (std::abs(queryNorm) < 1e-8) {
     queryNorm = 1;
   }
   Vector vec(args_->dim);
   for (int32_t i = 0; i < dict_->nwords(); i++) {
     std::string word = dict_->getWord(i);
-    real dp = wordVectors.dotRow(queryVec, i);
+    float dp = wordVectors.dotRow(queryVec, i);
     heap.push(std::make_pair(dp / queryNorm, word));
   }
   int32_t i = 0;
   while (i < k && heap.size() > 0) {
     auto it = banSet.find(heap.top().second);
     if (it == banSet.end()) {
-      results.push_back(std::pair<real, std::string>(heap.top().first, heap.top().second));
+      results.push_back(std::pair<float, std::string>(heap.top().first, heap.top().second));
       i++;
     }
     heap.pop();
@@ -540,7 +540,7 @@ void FastText::analogies(int32_t k) {
   precomputeWordVectors(wordVectors);
   std::set<std::string> banSet;
   std::cout << "Query triplet (A - B + C)? ";
-  std::vector<std::pair<real, std::string>> results;
+  std::vector<std::pair<float, std::string>> results;
   while (true) {
     banSet.clear();
     query.zero();
@@ -580,8 +580,8 @@ void FastText::trainThread(int32_t threadId) {
   int64_t localTokenCount = 0;
   std::vector<int32_t> line, labels;
   while (tokenCount_ < args_->epoch * ntokens) {
-    real progress = real(tokenCount_) / (args_->epoch * ntokens);
-    real lr = args_->lr * (1.0 - progress);
+    float progress = float(tokenCount_) / (args_->epoch * ntokens);
+    float lr = args_->lr * (1.0 - progress);
     if (args_->model == model_name::sup) {
       localTokenCount += dict_->getLine(ifs, line, labels);
       supervised(model, lr, line, labels);
@@ -693,7 +693,7 @@ void FastText::startThreads() {
   while (tokenCount_ < args_->epoch * ntokens) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     if (loss_ >= 0 && args_->verbose > 1) {
-      real progress = real(tokenCount_) / (args_->epoch * ntokens);
+      float progress = float(tokenCount_) / (args_->epoch * ntokens);
       std::cerr << "\r";
       printInfo(progress, loss_, std::cerr);
     }

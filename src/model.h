@@ -18,7 +18,6 @@
 #include "matrix.h"
 #include "vector.h"
 #include "qmatrix.h"
-#include "real.h"
 
 namespace fasttext {
 
@@ -42,10 +41,10 @@ class Model {
     Vector grad_;
     int32_t hsz_;
     int32_t osz_;
-    real loss_;
+    float loss_;
     int64_t nexamples_;
-    std::vector<real> t_sigmoid_;
-    std::vector<real> t_log_;
+    std::vector<float> t_sigmoid_;
+    std::vector<float> t_log_;
     // used for negative sampling:
     std::vector<int32_t> negatives_;
     size_t negpos;
@@ -54,8 +53,8 @@ class Model {
     std::vector< std::vector<bool> > codes;
     std::vector<Node> tree;
 
-    static bool comparePairs(const std::pair<real, int32_t>&,
-                             const std::pair<real, int32_t>&);
+    static bool comparePairs(const std::pair<float, int32_t>&,
+                             const std::pair<float, int32_t>&);
 
     int32_t getNegative(int32_t target);
     void initSigmoid();
@@ -67,22 +66,22 @@ class Model {
     Model(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>,
           std::shared_ptr<Args>, int32_t);
 
-    real binaryLogistic(int32_t, bool, real);
-    real negativeSampling(int32_t, real);
-    real hierarchicalSoftmax(int32_t, real);
-    real softmax(int32_t, real);
+    float binaryLogistic(int32_t, bool, float);
+    float negativeSampling(int32_t, float);
+    float hierarchicalSoftmax(int32_t, float);
+    float softmax(int32_t, float);
 
-    void predict(const std::vector<int32_t>&, int32_t, real,
-                 std::vector<std::pair<real, int32_t>>&,
+    void predict(const std::vector<int32_t>&, int32_t, float,
+                 std::vector<std::pair<float, int32_t>>&,
                  Vector&, Vector&) const;
-    void predict(const std::vector<int32_t>&, int32_t, real,
-                 std::vector<std::pair<real, int32_t>>&);
-    void dfs(int32_t, real, int32_t, real,
-             std::vector<std::pair<real, int32_t>>&,
+    void predict(const std::vector<int32_t>&, int32_t, float,
+                 std::vector<std::pair<float, int32_t>>&);
+    void dfs(int32_t, float, int32_t, float,
+             std::vector<std::pair<float, int32_t>>&,
              Vector&) const;
-    void findKBest(int32_t, real, std::vector<std::pair<real, int32_t>>&,
+    void findKBest(int32_t, float, std::vector<std::pair<float, int32_t>>&,
                    Vector&, Vector&) const;
-    void update(const std::vector<int32_t>&, int32_t, real);
+    void update(const std::vector<int32_t>&, int32_t, float);
     void computeHidden(const std::vector<int32_t>&, Vector&) const;
     void computeOutputSoftmax(Vector&, Vector&) const;
     void computeOutputSoftmax();
@@ -90,10 +89,10 @@ class Model {
     void setTargetCounts(const std::vector<int64_t>&);
     void initTableNegatives(const std::vector<int64_t>&);
     void buildTree(const std::vector<int64_t>&);
-    real getLoss() const;
-    real sigmoid(real) const;
-    real log(real) const;
-    real std_log(real) const;
+    float getLoss() const;
+    float sigmoid(float) const;
+    float log(float) const;
+    float std_log(float) const;
 
     std::minstd_rand rng;
     bool quant_;

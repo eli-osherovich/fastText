@@ -28,16 +28,16 @@ Vector::Vector(std::size_t m) : size_(m) {
 
 void Vector::zero() { std::fill(data_, data_ + size_, 0.0f); }
 
-real Vector::norm() const { return cblas_snrm2(size_, data_, 1); }
+float Vector::norm() const { return cblas_snrm2(size_, data_, 1); }
 
-void Vector::mul(real a) { cblas_sscal(size_, a, data_, 1); }
+void Vector::mul(float a) { cblas_sscal(size_, a, data_, 1); }
 
 void Vector::addVector(const Vector &source) {
   assert(size() == source.size());
   vsAdd(size_, data_, source.data(), data_);
 }
 
-void Vector::addVector(const Vector &source, real a) {
+void Vector::addVector(const Vector &source, float a) {
   assert(size() == source.size());
   cblas_saxpy(size_, a, source.data(), 1, data_, 1);
 }
@@ -51,7 +51,7 @@ void Vector::addRow(const Matrix &A, std::size_t i) {
   }
 }
 
-void Vector::addRow(const Matrix &A, std::size_t i, real a) {
+void Vector::addRow(const Matrix &A, std::size_t i, float a) {
   assert(i >= 0);
   assert(i < A.size(0));
   assert(size() == A.size(1));
@@ -82,7 +82,7 @@ void Vector::mul(const QMatrix &A, const Vector &vec) {
 }
 
 std::size_t Vector::argmax() {
-  real max = data_[0];
+  float max = data_[0];
   std::size_t argmax = 0;
   for (std::size_t i = 1; i < size(); i++) {
     if (data_[i] > max) {

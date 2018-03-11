@@ -36,7 +36,7 @@ Matrix::Matrix(std::size_t m, std::size_t n) : m_(m), n_(n) {
 
 void Matrix::zero() { std::fill(data_, data_ + m_ * stride_, 0.0f); }
 
-void Matrix::uniform(real a) {
+void Matrix::uniform(float a) {
   std::minstd_rand rng(1);
   std::uniform_real_distribution<> uniform(-a, a);
   for (std::size_t i = 0; i < (m_ * n_); i++) {
@@ -44,7 +44,7 @@ void Matrix::uniform(real a) {
   }
 }
 
-real Matrix::dotRow(const Vector& vec, std::size_t i) const {
+float Matrix::dotRow(const Vector& vec, std::size_t i) const {
   assert(i < m_);
   assert(vec.size() == n_);
   float d = cblas_sdot(n_, data_ + i * stride_, 1, vec.data(), 1);
@@ -54,7 +54,7 @@ real Matrix::dotRow(const Vector& vec, std::size_t i) const {
   return d;
 }
 
-void Matrix::addRow(const Vector& vec, std::size_t i, real a) {
+void Matrix::addRow(const Vector& vec, std::size_t i, float a) {
   assert(i < m_);
   assert(vec.size() == n_);
   cblas_saxpy(n_, a, vec.data(), 1, data_ + i * stride_, 1);
@@ -91,7 +91,7 @@ void Matrix::divideRow(const Vector& denoms, std::size_t ib, int64_t ie) {
 }
 
 float Matrix::l2NormRow(std::size_t i) const {
-  real norm = cblas_snrm2(n_, data_ + i * stride_, 1);
+  float norm = cblas_snrm2(n_, data_ + i * stride_, 1);
 
   if (std::isnan(norm)) {
     throw std::runtime_error("Encountered NaN.");

@@ -129,7 +129,7 @@ void test(const std::vector<std::string>& args) {
     exit(EXIT_FAILURE);
   }
   int32_t k = 1;
-  real threshold = 0.0;
+  float threshold = 0.0;
   if (args.size() > 4) {
     k = std::stoi(args[4]);
     if (args.size() == 6) {
@@ -166,7 +166,7 @@ void predict(const std::vector<std::string>& args) {
     exit(EXIT_FAILURE);
   }
   int32_t k = 1;
-  real threshold = 0.0;
+  float threshold = 0.0;
   if (args.size() > 4) {
     k = std::stoi(args[4]);
     if (args.size() == 6) {
@@ -258,7 +258,7 @@ void nn(const std::vector<std::string> args) {
   std::cerr << " done." << std::endl;
   std::set<std::string> banSet;
   std::cout << "Query word? ";
-  std::vector<std::pair<real, std::string>> results;
+  std::vector<std::pair<float, std::string>> results;
   while (std::cin >> queryWord) {
     banSet.clear();
     banSet.insert(queryWord);

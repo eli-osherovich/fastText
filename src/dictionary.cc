@@ -107,7 +107,7 @@ void Dictionary::getSubwords(const std::string& word,
   }
 }
 
-bool Dictionary::discard(int32_t id, real rand) const {
+bool Dictionary::discard(int32_t id, float rand) const {
   assert(id >= 0);
   assert(id < nwords_);
   if (args_->model == model_name::sup) return false;
@@ -277,7 +277,7 @@ void Dictionary::threshold(int64_t t, int64_t tl) {
 void Dictionary::initTableDiscard() {
   pdiscard_.resize(size_);
   for (size_t i = 0; i < size_; i++) {
-    real f = real(words_[i].count) / real(ntokens_);
+    float f = float(words_[i].count) / float(ntokens_);
     pdiscard_[i] = std::sqrt(args_->t / f) + args_->t / f;
   }
 }
