@@ -8,77 +8,80 @@
  */
 
 #include "matrix.h"
+#include <iostream>
 
-#include <random>
+#include <cmath>
 #include <exception>
+#include <random>
 #include <stdexcept>
+
+#include <mkl.h>
 
 #include "utils.h"
 #include "vector.h"
 
 namespace fasttext {
+Matrix::~Matrix() { mkl_free(data_); }
 
 Matrix::Matrix() : Matrix(0, 0) {}
 
-Matrix::Matrix(int64_t m, int64_t n) : data_(m * n), m_(m), n_(n) {}
+Matrix::Matrix(std::size_t m, std::size_t n) : m_(m), n_(n) {
+  stride_ =
+      std::ceil(static_cast<float>(n_ * sizeof(float)) / Vector::alignment) *
+      Vector::alignment / sizeof(float);
 
-void Matrix::zero() {
-  std::fill(data_.begin(), data_.end(), 0.0);
+  data_ = static_cast<float*>(
+      mkl_malloc(sizeof(float) * m_ * stride_, Vector::alignment));
 }
+
+void Matrix::zero() { std::fill(data_, data_ + m_ * stride_, 0.0f); }
 
 void Matrix::uniform(real a) {
   std::minstd_rand rng(1);
   std::uniform_real_distribution<> uniform(-a, a);
-  for (int64_t i = 0; i < (m_ * n_); i++) {
+  for (std::size_t i = 0; i < (m_ * n_); i++) {
     data_[i] = uniform(rng);
   }
 }
 
-real Matrix::dotRow(const Vector& vec, int64_t i) const {
-  assert(i >= 0);
+real Matrix::dotRow(const Vector& vec, std::size_t i) const {
   assert(i < m_);
   assert(vec.size() == n_);
-  real d = 0.0;
-  for (int64_t j = 0; j < n_; j++) {
-    d += at(i, j) * vec[j];
-  }
+  float d = cblas_sdot(n_, data_ + i * stride_, 1, vec.data(), 1);
   if (std::isnan(d)) {
     throw std::runtime_error("Encountered NaN.");
   }
   return d;
 }
 
-void Matrix::addRow(const Vector& vec, int64_t i, real a) {
-  assert(i >= 0);
+void Matrix::addRow(const Vector& vec, std::size_t i, real a) {
   assert(i < m_);
   assert(vec.size() == n_);
-  for (int64_t j = 0; j < n_; j++) {
-    data_[i * n_ + j] += a * vec[j];
-  }
+  cblas_saxpy(n_, a, vec.data(), 1, data_ + i * stride_, 1);
 }
 
-void Matrix::multiplyRow(const Vector& nums, int64_t ib, int64_t ie) {
-  if (ie == -1) {
-    ie = m_;
-  }
-  assert(ie <= nums.size());
-  for (auto i = ib; i < ie; i++) {
-    real n = nums[i - ib];
-    if (n != 0) {
-      for (auto j = 0; j < n_; j++) {
-        at(i, j) *= n;
-      }
-    }
-  }
-}
+// void Matrix::multiplyRow(const Vector& nums, std::size_t ib, int64_t ie) {
+//   if (ie == -1) {
+//     ie = m_;
+//   }
+//   assert(ie <= nums.size());
+//   for (int64_t i = ib; i < ie; ++i) {
+//     float n = nums[i - ib];
+//     if (n != 0) {
+//       for (auto j = 0; j < n_; j++) {
+//         at(i, j) *= n;
+//       }
+//     }
+//   }
+// }
 
-void Matrix::divideRow(const Vector& denoms, int64_t ib, int64_t ie) {
+void Matrix::divideRow(const Vector& denoms, std::size_t ib, int64_t ie) {
   if (ie == -1) {
     ie = m_;
   }
   assert(ie <= denoms.size());
   for (auto i = ib; i < ie; i++) {
-    real n = denoms[i - ib];
+    float n = denoms[i - ib];
     if (n != 0) {
       for (auto j = 0; j < n_; j++) {
         at(i, j) /= n;
@@ -87,11 +90,9 @@ void Matrix::divideRow(const Vector& denoms, int64_t ib, int64_t ie) {
   }
 }
 
-real Matrix::l2NormRow(int64_t i) const {
-  auto norm = 0.0;
-  for (auto j = 0; j < n_; j++) {
-    norm += at(i, j) * at(i, j);
-  }
+float Matrix::l2NormRow(std::size_t i) const {
+  real norm = cblas_snrm2(n_, data_ + i * stride_, 1);
+
   if (std::isnan(norm)) {
     throw std::runtime_error("Encountered NaN.");
   }
@@ -106,22 +107,23 @@ void Matrix::l2NormRow(Vector& norms) const {
 }
 
 void Matrix::save(std::ostream& out) {
-  out.write((char*)&m_, sizeof(int64_t));
-  out.write((char*)&n_, sizeof(int64_t));
-  out.write((char*)data_.data(), m_ * n_ * sizeof(real));
+  out.write((char*)&m_, sizeof(std::size_t));
+  out.write((char*)&n_, sizeof(std::size_t));
+  out.write((char*)data_, m_ * stride_ * sizeof(float));
 }
 
 void Matrix::load(std::istream& in) {
-  in.read((char*)&m_, sizeof(int64_t));
-  in.read((char*)&n_, sizeof(int64_t));
-  data_ = std::vector<real>(m_ * n_);
-  in.read((char*)data_.data(), m_ * n_ * sizeof(real));
+  in.read((char*)&m_, sizeof(std::size_t));
+  in.read((char*)&n_, sizeof(std::size_t));
+  data_ = static_cast<float*>(
+      mkl_malloc(sizeof(float) * m_ * stride_, Vector::alignment));
+  in.read((char*)data_, m_ * stride_ * sizeof(float));
 }
 
 void Matrix::dump(std::ostream& out) const {
   out << m_ << " " << n_ << std::endl;
-  for (int64_t i = 0; i < m_; i++) {
-    for (int64_t j = 0; j < n_; j++) {
+  for (std::size_t i = 0; i < m_; i++) {
+    for (std::size_t j = 0; j < n_; j++) {
       if (j > 0) {
         out << " ";
       }
@@ -131,4 +133,4 @@ void Matrix::dump(std::ostream& out) const {
   }
 };
 
-}
+}  // namespace fasttext
