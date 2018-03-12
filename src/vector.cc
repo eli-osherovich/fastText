@@ -55,9 +55,7 @@ void Vector::addRow(const Matrix &A, std::size_t i, float a) {
   assert(i >= 0);
   assert(i < A.size(0));
   assert(size() == A.size(1));
-  for (std::size_t j = 0; j < A.size(1); j++) {
-    data_[j] += a * A.at(i, j);
-  }
+  cblas_saxpy(size_, a, A.row(i), 1, data_, 1);
 }
 
 void Vector::addRow(const QMatrix &A, std::size_t i) {

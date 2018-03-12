@@ -41,6 +41,7 @@ class Matrix {
     return data_[i * stride_ + j];
   };
 
+  inline float* row(std::size_t i) const { return data_ + i * stride_; }
   inline float& at(int64_t i, int64_t j) { return data_[i * stride_ + j]; };
 
   inline int64_t size(int64_t dim) const {
