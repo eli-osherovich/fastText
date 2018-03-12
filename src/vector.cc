@@ -14,48 +14,48 @@
 #include <cmath>
 #include <iomanip>
 
+#include <ipp.h>
 #include "matrix.h"
 #include "qmatrix.h"
-#include <mkl.h>
 
 namespace fasttext {
 
-Vector::~Vector() { mkl_free(data_); }
+Vector::~Vector() { ippsFree(data_); }
 
 Vector::Vector(std::size_t m) : size_(m) {
-  data_ = static_cast<float *>(mkl_malloc(sizeof(float) * size_, alignment));
+  data_ = static_cast<float *>(ippsMalloc_32f_L(size_));
 }
 
-void Vector::zero() { std::fill(data_, data_ + size_, 0.0f); }
+void Vector::zero() { ippsZero_32f(data_, size_); }
 
-float Vector::norm() const { return cblas_snrm2(size_, data_, 1); }
+float Vector::norm() const {
+  float norm;
+  ippsNorm_L2_32f(data_, size_, &norm);
+  return norm;
+}
 
-void Vector::mul(float a) { cblas_sscal(size_, a, data_, 1); }
+void Vector::mul(float a) { ippsMulC_32f_I(a, data_, size_); }
 
 void Vector::addVector(const Vector &source) {
   assert(size() == source.size());
-  vsAdd(size_, data_, source.data(), data_);
+  ippsAdd_32f_I(source.data(), data_, size_);
 }
 
 void Vector::addVector(const Vector &source, float a) {
   assert(size() == source.size());
-  cblas_saxpy(size_, a, source.data(), 1, data_, 1);
+  ippsAddProductC_32f(source.data(), a, data_, size_);
 }
 
 void Vector::addRow(const Matrix &A, std::size_t i) {
-  assert(i >= 0);
   assert(i < A.size(0));
   assert(size() == A.size(1));
-  for (std::size_t j = 0; j < A.size(1); j++) {
-    data_[j] += A.at(i, j);
-  }
+  ippsAdd_32f_I(A.row(i), data_, size_);
 }
 
 void Vector::addRow(const Matrix &A, std::size_t i, float a) {
-  assert(i >= 0);
   assert(i < A.size(0));
   assert(size() == A.size(1));
-  cblas_saxpy(size_, a, A.row(i), 1, data_, 1);
+  ippsAddProductC_32f(A.row(i), a, data_, size_);
 }
 
 void Vector::addRow(const QMatrix &A, std::size_t i) {
@@ -99,4 +99,4 @@ std::ostream &operator<<(std::ostream &os, const Vector &v) {
   return os;
 }
 
-} // namespace fasttext
+}  // namespace fasttext

@@ -15,26 +15,24 @@
 #include <random>
 #include <stdexcept>
 
-#include <mkl.h>
+#include <ipp.h>
 
 #include "utils.h"
 #include "vector.h"
 
 namespace fasttext {
-Matrix::~Matrix() { mkl_free(data_); }
+Matrix::~Matrix() { ippsFree(data_); }
 
 Matrix::Matrix() : Matrix(0, 0) {}
 
 Matrix::Matrix(std::size_t m, std::size_t n) : m_(m), n_(n) {
-  stride_ =
-      std::ceil(static_cast<float>(n_ * sizeof(float)) / Vector::alignment) *
-      Vector::alignment / sizeof(float);
-
-  data_ = static_cast<float*>(
-      mkl_malloc(sizeof(float) * m_ * stride_, Vector::alignment));
+  stride_ = std::ceil(static_cast<float>(n_ * sizeof(float)) / 64) * 64 /
+            sizeof(float);
+  std::cout << "Allocating " << m_*stride_;
+  data_ = ippsMalloc_32f_L(m_ * stride_);
 }
 
-void Matrix::zero() { std::fill(data_, data_ + m_ * stride_, 0.0f); }
+void Matrix::zero() { ippsZero_32f(data_, m_ * stride_); }
 
 void Matrix::uniform(float a) {
   std::minstd_rand rng(1);
@@ -47,17 +45,22 @@ void Matrix::uniform(float a) {
 float Matrix::dotRow(const Vector& vec, std::size_t i) const {
   assert(i < m_);
   assert(vec.size() == n_);
-  float d = cblas_sdot(n_, data_ + i * stride_, 1, vec.data(), 1);
+  float d;
+  ippsDotProd_32f(data_ + i * stride_, vec.data(), n_, &d);
   if (std::isnan(d)) {
     throw std::runtime_error("Encountered NaN.");
   }
   return d;
 }
 
+void Matrix::addRow(const Vector& vec, std::size_t i) {
+  ippsAdd_32f_I(vec.data(), data_ + i * stride_, n_);
+}
+
 void Matrix::addRow(const Vector& vec, std::size_t i, float a) {
   assert(i < m_);
   assert(vec.size() == n_);
-  cblas_saxpy(n_, a, vec.data(), 1, data_ + i * stride_, 1);
+  ippsAddProductC_32f(vec.data(), a, data_ + i * stride_, n_);
 }
 
 // void Matrix::multiplyRow(const Vector& nums, std::size_t ib, int64_t ie) {
@@ -91,12 +94,13 @@ void Matrix::divideRow(const Vector& denoms, std::size_t ib, int64_t ie) {
 }
 
 float Matrix::l2NormRow(std::size_t i) const {
-  float norm = cblas_snrm2(n_, data_ + i * stride_, 1);
+  float norm;
+  ippsNorm_L2_32f(data_, n_, &norm);
 
   if (std::isnan(norm)) {
     throw std::runtime_error("Encountered NaN.");
   }
-  return std::sqrt(norm);
+  return norm;
 }
 
 void Matrix::l2NormRow(Vector& norms) const {
@@ -115,8 +119,7 @@ void Matrix::save(std::ostream& out) {
 void Matrix::load(std::istream& in) {
   in.read((char*)&m_, sizeof(std::size_t));
   in.read((char*)&n_, sizeof(std::size_t));
-  data_ = static_cast<float*>(
-      mkl_malloc(sizeof(float) * m_ * stride_, Vector::alignment));
+  data_ = static_cast<float*>(ippsMalloc_32f_L(m_ * stride_));
   in.read((char*)data_, m_ * stride_ * sizeof(float));
 }
 

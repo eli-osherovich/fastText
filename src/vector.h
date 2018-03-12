@@ -25,7 +25,6 @@ class Vector {
   const std::size_t size_;
 
  public:
-  static constexpr int alignment = 64;
   explicit Vector(std::size_t);
   Vector(const Vector &) = delete;
   Vector &operator=(const Vector &) = delete;

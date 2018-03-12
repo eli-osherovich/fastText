@@ -9,9 +9,9 @@
 
 #include "model.h"
 
-#include <iostream>
 #include <assert.h>
 #include <algorithm>
+#include <iostream>
 #include <stdexcept>
 
 namespace fasttext {
@@ -20,11 +20,8 @@ constexpr int64_t SIGMOID_TABLE_SIZE = 512;
 constexpr int64_t MAX_SIGMOID = 8;
 constexpr int64_t LOG_TABLE_SIZE = 512;
 
-Model::Model(
-    std::shared_ptr<Matrix> wi,
-    std::shared_ptr<Matrix> wo,
-    std::shared_ptr<Args> args,
-    int32_t seed)
+Model::Model(std::shared_ptr<Matrix> wi, std::shared_ptr<Matrix> wo,
+             std::shared_ptr<Args> args, int32_t seed)
     : hidden_(args->dim),
       output_(wo->size(0)),
       grad_(args->dim),
@@ -108,9 +105,7 @@ void Model::computeOutputSoftmax(Vector& hidden, Vector& output) const {
   }
 }
 
-void Model::computeOutputSoftmax() {
-  computeOutputSoftmax(hidden_, output_);
-}
+void Model::computeOutputSoftmax() { computeOutputSoftmax(hidden_, output_); }
 
 float Model::softmax(int32_t target, float lr) {
   grad_.zero();
@@ -124,25 +119,29 @@ float Model::softmax(int32_t target, float lr) {
   return -log(output_[target]);
 }
 
-void Model::computeHidden(const std::vector<int32_t>& input, Vector& hidden) const {
+void Model::computeHidden(const std::vector<int32_t>& input,
+                          Vector& hidden) const {
   assert(hidden.size() == hsz_);
   hidden.zero();
-  for (auto it = input.cbegin(); it != input.cend(); ++it) {
-    if(quant_) {
+  if (quant_) {
+    for (auto it = input.cbegin(); it != input.cend(); ++it) {
       hidden.addRow(*qwi_, *it);
-    } else {
+    }
+  } else {
+    for (auto it = input.cbegin(); it != input.cend(); ++it) {
       hidden.addRow(*wi_, *it);
     }
   }
   hidden.mul(1.0 / input.size());
 }
 
-bool Model::comparePairs(const std::pair<float, int32_t> &l,
-                         const std::pair<float, int32_t> &r) {
+bool Model::comparePairs(const std::pair<float, int32_t>& l,
+                         const std::pair<float, int32_t>& r) {
   return l.first > r.first;
 }
 
-void Model::predict(const std::vector<int32_t>& input, int32_t k, float threshold,
+void Model::predict(const std::vector<int32_t>& input, int32_t k,
+                    float threshold,
                     std::vector<std::pair<float, int32_t>>& heap,
                     Vector& hidden, Vector& output) const {
   if (k <= 0) {
@@ -161,21 +160,15 @@ void Model::predict(const std::vector<int32_t>& input, int32_t k, float threshol
   std::sort_heap(heap.begin(), heap.end(), comparePairs);
 }
 
-void Model::predict(
-  const std::vector<int32_t>& input,
-  int32_t k,
-  float threshold,
-  std::vector<std::pair<float, int32_t>>& heap
-) {
+void Model::predict(const std::vector<int32_t>& input, int32_t k,
+                    float threshold,
+                    std::vector<std::pair<float, int32_t>>& heap) {
   predict(input, k, threshold, heap, hidden_, output_);
 }
 
-void Model::findKBest(
-  int32_t k,
-  float threshold,
-  std::vector<std::pair<float, int32_t>>& heap,
-  Vector& hidden, Vector& output
-) const {
+void Model::findKBest(int32_t k, float threshold,
+                      std::vector<std::pair<float, int32_t>>& heap,
+                      Vector& hidden, Vector& output) const {
   computeOutputSoftmax(hidden, output);
   for (int32_t i = 0; i < osz_; i++) {
     if (output[i] < threshold) continue;
@@ -211,9 +204,9 @@ void Model::dfs(int32_t k, float threshold, int32_t node, float score,
 
   float f;
   if (quant_ && args_->qout) {
-    f= qwo_->dotRow(hidden, node - osz_);
+    f = qwo_->dotRow(hidden, node - osz_);
   } else {
-    f= wo_->dotRow(hidden, node - osz_);
+    f = wo_->dotRow(hidden, node - osz_);
   }
   f = 1. / (1 + std::exp(-f));
 
@@ -221,7 +214,8 @@ void Model::dfs(int32_t k, float threshold, int32_t node, float score,
   dfs(k, threshold, tree[node].right, score + std_log(f), heap, hidden);
 }
 
-void Model::update(const std::vector<int32_t>& input, int32_t target, float lr) {
+void Model::update(const std::vector<int32_t>& input, int32_t target,
+                   float lr) {
   assert(target >= 0);
   assert(target < osz_);
   if (input.size() == 0) return;
@@ -239,7 +233,7 @@ void Model::update(const std::vector<int32_t>& input, int32_t target, float lr) 
     grad_.mul(1.0 / input.size());
   }
   for (auto it = input.cbegin(); it != input.cend(); ++it) {
-    wi_->addRow(grad_, *it, 1.0);
+    wi_->addRow(grad_, *it);
   }
 }
 
@@ -320,9 +314,7 @@ void Model::buildTree(const std::vector<int64_t>& counts) {
   }
 }
 
-float Model::getLoss() const {
-  return loss_ / nexamples_;
-}
+float Model::getLoss() const { return loss_ / nexamples_; }
 
 void Model::initSigmoid() {
   for (int i = 0; i < SIGMOID_TABLE_SIZE + 1; i++) {
@@ -346,9 +338,7 @@ float Model::log(float x) const {
   return t_log_[i];
 }
 
-float Model::std_log(float x) const {
-  return std::log(x+1e-5);
-}
+float Model::std_log(float x) const { return std::log(x + 1e-5); }
 
 float Model::sigmoid(float x) const {
   if (x < -MAX_SIGMOID) {
@@ -356,9 +346,10 @@ float Model::sigmoid(float x) const {
   } else if (x > MAX_SIGMOID) {
     return 1.0;
   } else {
-    int64_t i = int64_t((x + MAX_SIGMOID) * SIGMOID_TABLE_SIZE / MAX_SIGMOID / 2);
+    int64_t i =
+        int64_t((x + MAX_SIGMOID) * SIGMOID_TABLE_SIZE / MAX_SIGMOID / 2);
     return t_sigmoid_[i];
   }
 }
 
-}
+}  // namespace fasttext

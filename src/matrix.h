@@ -57,6 +57,8 @@ class Matrix {
   void uniform(float);
   float dotRow(const Vector&, std::size_t) const;
   void addRow(const Vector&, std::size_t, float);
+  void addRow(const Vector& vec, std::size_t i);
+
 
   void multiplyRow(const Vector& nums, std::size_t ib = 0, int64_t ie = -1);
   void divideRow(const Vector& denoms, std::size_t ib = 0, int64_t ie = -1);

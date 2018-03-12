@@ -8,9 +8,9 @@
 #
 
 CXX = c++
-CXXFLAGS = -pthread -std=c++0x -march=native -m64
+CXXFLAGS = -pthread -std=c++0x -march=native -m64 -L${IPPROOT}/lib/intel64
 OBJS = args.o dictionary.o productquantizer.o matrix.o qmatrix.o vector.o model.o utils.o fasttext.o
-INCLUDES = -I. -I${MKLROOT}/include
+INCLUDES = -I. -I${IPPROOT}/include
 
 opt: CXXFLAGS += -O3 -funroll-loops
 opt: fasttext
@@ -46,7 +46,7 @@ fasttext.o: src/fasttext.cc src/*.h
 	$(CXX) $(CXXFLAGS) -c src/fasttext.cc
 
 fasttext: $(OBJS) src/fasttext.cc
-	$(CXX) $(CXXFLAGS) $(OBJS)   -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl src/main.cc -o fasttext
+	$(CXX) $(CXXFLAGS) $(OBJS) -lipps -lm -ldl src/main.cc -o fasttext
 
 clean:
 	rm -rf *.o fasttext
