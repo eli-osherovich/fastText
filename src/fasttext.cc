@@ -125,11 +125,11 @@ void FastText::saveOutput() {
 
 bool FastText::checkModel(std::istream& in) {
   int32_t magic;
-  in.read((char*)&(magic), sizeof(int32_t));
+  in.read((char*)&(magic), sizeof(magic));
   if (magic != FASTTEXT_FILEFORMAT_MAGIC_INT32) {
     return false;
   }
-  in.read((char*)&(version), sizeof(int32_t));
+  in.read((char*)&(version), sizeof(version));
   if (version > FASTTEXT_VERSION) {
     return false;
   }
@@ -139,8 +139,8 @@ bool FastText::checkModel(std::istream& in) {
 void FastText::signModel(std::ostream& out) {
   const int32_t magic = FASTTEXT_FILEFORMAT_MAGIC_INT32;
   const int32_t version = FASTTEXT_VERSION;
-  out.write((char*)&(magic), sizeof(int32_t));
-  out.write((char*)&(version), sizeof(int32_t));
+  out.write((char*)&(magic), sizeof(magic));
+  out.write((char*)&(version), sizeof(version));
 }
 
 void FastText::saveModel() {
@@ -161,15 +161,13 @@ void FastText::saveModel(const std::string path) {
   signModel(ofs);
   args_->save(ofs);
   dict_->save(ofs);
-
-  ofs.write((char*)&(quant_), sizeof(bool));
+  ofs.write((char*)&(quant_), sizeof(quant_));
   if (quant_) {
     qinput_->save(ofs);
   } else {
     input_->save(ofs);
   }
-
-  ofs.write((char*)&(args_->qout), sizeof(bool));
+  ofs.write((char*)&(args_->qout), sizeof(args_->qout));
   if (quant_ && args_->qout) {
     qoutput_->save(ofs);
   } else {
@@ -205,7 +203,7 @@ void FastText::loadModel(std::istream& in) {
   dict_ = std::make_shared<Dictionary>(args_, in);
 
   bool quant_input;
-  in.read((char*) &quant_input, sizeof(bool));
+  in.read((char*) &quant_input, sizeof(quant_input));
   if (quant_input) {
     quant_ = true;
     qinput_->load(in);
@@ -220,7 +218,7 @@ void FastText::loadModel(std::istream& in) {
         "See issue #332 on Github for more information.\n");
   }
 
-  in.read((char*) &args_->qout, sizeof(bool));
+  in.read((char*) &args_->qout, sizeof(args_->qout));
   if (quant_ && args_->qout) {
     qoutput_->load(in);
   } else {

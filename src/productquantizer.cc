@@ -197,7 +197,7 @@ void ProductQuantizer::save(std::ostream& out) {
   out.write((char*) &nsubq_, sizeof(nsubq_));
   out.write((char*) &dsub_, sizeof(dsub_));
   out.write((char*) &lastdsub_, sizeof(lastdsub_));
-  out.write((char*) centroids_.data(), centroids_.size() * sizeof(float));
+  out.write((char*) centroids_.data(), centroids_.size() * sizeof(*centroids_.data()));
 }
 
 void ProductQuantizer::load(std::istream& in) {
@@ -207,7 +207,7 @@ void ProductQuantizer::load(std::istream& in) {
   in.read((char*) &lastdsub_, sizeof(lastdsub_));
   centroids_.resize(dim_ * ksub_);
   for (auto i=0; i < centroids_.size(); i++) {
-    in.read((char*) &centroids_[i], sizeof(float));
+    in.read((char*) &centroids_[i], sizeof(*centroids_.data()));
   }
 }
 

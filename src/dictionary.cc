@@ -398,47 +398,47 @@ std::string Dictionary::getLabel(int32_t lid) const {
 }
 
 void Dictionary::save(std::ostream& out) const {
-  out.write((char*) &size_, sizeof(int32_t));
-  out.write((char*) &nwords_, sizeof(int32_t));
-  out.write((char*) &nlabels_, sizeof(int32_t));
-  out.write((char*) &ntokens_, sizeof(int64_t));
-  out.write((char*) &pruneidx_size_, sizeof(int64_t));
+  out.write((char*) &size_, sizeof(size_));
+  out.write((char*) &nwords_, sizeof(nwords_));
+  out.write((char*) &nlabels_, sizeof(nlabels_));
+  out.write((char*) &ntokens_, sizeof(ntokens_));
+  out.write((char*) &pruneidx_size_, sizeof(pruneidx_size_));
   for (int32_t i = 0; i < size_; i++) {
     entry e = words_[i];
-    out.write(e.word.data(), e.word.size() * sizeof(char));
+    out.write(e.word.data(), e.word.size() * sizeof(*e.word.data()));
     out.put(0);
-    out.write((char*) &(e.count), sizeof(int64_t));
-    out.write((char*) &(e.type), sizeof(entry_type));
+    out.write((char*) &(e.count), sizeof(e.count));
+    out.write((char*) &(e.type), sizeof(e.type));
   }
   for (const auto pair : pruneidx_) {
-    out.write((char*) &(pair.first), sizeof(int32_t));
-    out.write((char*) &(pair.second), sizeof(int32_t));
+    out.write((char*) &(pair.first), sizeof(pair.first));
+    out.write((char*) &(pair.second), sizeof(pair.second));
   }
 }
 
 void Dictionary::load(std::istream& in) {
   words_.clear();
-  in.read((char*) &size_, sizeof(int32_t));
-  in.read((char*) &nwords_, sizeof(int32_t));
-  in.read((char*) &nlabels_, sizeof(int32_t));
-  in.read((char*) &ntokens_, sizeof(int64_t));
-  in.read((char*) &pruneidx_size_, sizeof(int64_t));
+  in.read((char*) &size_, sizeof(size_));
+  in.read((char*) &nwords_, sizeof(nwords_));
+  in.read((char*) &nlabels_, sizeof(nlabels_));
+  in.read((char*) &ntokens_, sizeof(ntokens_));
+  in.read((char*) &pruneidx_size_, sizeof(pruneidx_size_));
   for (int32_t i = 0; i < size_; i++) {
     char c;
     entry e;
     while ((c = in.get()) != 0) {
       e.word.push_back(c);
     }
-    in.read((char*) &e.count, sizeof(int64_t));
-    in.read((char*) &e.type, sizeof(entry_type));
+    in.read((char*) &e.count, sizeof(e.count));
+    in.read((char*) &e.type, sizeof(e.type));
     words_.push_back(e);
   }
   pruneidx_.clear();
   for (int32_t i = 0; i < pruneidx_size_; i++) {
     int32_t first;
     int32_t second;
-    in.read((char*) &first, sizeof(int32_t));
-    in.read((char*) &second, sizeof(int32_t));
+    in.read((char*) &first, sizeof(first));
+    in.read((char*) &second, sizeof(second));
     pruneidx_[first] = second;
   }
   initTableDiscard();

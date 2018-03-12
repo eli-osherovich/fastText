@@ -28,7 +28,6 @@ Matrix::Matrix() : Matrix(0, 0) {}
 Matrix::Matrix(std::size_t m, std::size_t n) : m_(m), n_(n) {
   stride_ = std::ceil(static_cast<float>(n_ * sizeof(float)) / 64) * 64 /
             sizeof(float);
-  std::cout << "Allocating " << m_*stride_;
   data_ = ippsMalloc_32f_L(m_ * stride_);
 }
 
@@ -111,20 +110,22 @@ void Matrix::l2NormRow(Vector& norms) const {
 }
 
 void Matrix::save(std::ostream& out) {
-  out.write((char*)&m_, sizeof(std::size_t));
-  out.write((char*)&n_, sizeof(std::size_t));
-  out.write((char*)data_, m_ * stride_ * sizeof(float));
+  out.write((char*)&m_, sizeof(m_));
+  out.write((char*)&n_, sizeof(n_));
+  out.write((char*)data_, m_ * stride_ * sizeof(*data_));
 }
 
 void Matrix::load(std::istream& in) {
-  in.read((char*)&m_, sizeof(std::size_t));
-  in.read((char*)&n_, sizeof(std::size_t));
-  data_ = static_cast<float*>(ippsMalloc_32f_L(m_ * stride_));
-  in.read((char*)data_, m_ * stride_ * sizeof(float));
+
+  in.read((char*)&m_, sizeof(m_));
+  in.read((char*)&n_, sizeof(n_));
+  stride_ = std::ceil(static_cast<float>(n_ * sizeof(float)) / 64) * 64 /
+    sizeof(float);
+  data_ = ippsMalloc_32f_L(m_ * stride_);
+  in.read((char*)data_, m_ * stride_ * sizeof(*data_));
 }
 
 void Matrix::dump(std::ostream& out) const {
-  out << m_ << " " << n_ << std::endl;
   for (std::size_t i = 0; i < m_; i++) {
     for (std::size_t j = 0; j < n_; j++) {
       if (j > 0) {

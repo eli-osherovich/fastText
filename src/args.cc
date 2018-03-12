@@ -242,36 +242,36 @@ void Args::printQuantizationHelp() {
     << "  -dsub               size of each sub-vector [" << dsub << "]\n";
 }
 
-void Args::save(std::ostream& out) {
-  out.write((char*) &(dim), sizeof(int));
-  out.write((char*) &(ws), sizeof(int));
-  out.write((char*) &(epoch), sizeof(int));
-  out.write((char*) &(minCount), sizeof(int));
-  out.write((char*) &(neg), sizeof(int));
-  out.write((char*) &(wordNgrams), sizeof(int));
-  out.write((char*) &(loss), sizeof(loss_name));
-  out.write((char*) &(model), sizeof(model_name));
-  out.write((char*) &(bucket), sizeof(int));
-  out.write((char*) &(minn), sizeof(int));
-  out.write((char*) &(maxn), sizeof(int));
-  out.write((char*) &(lrUpdateRate), sizeof(int));
-  out.write((char*) &(t), sizeof(double));
+ void Args::save(std::ostream & out) const {
+  out.write((char*) &(dim), sizeof(dim));
+  out.write((char*) &(ws), sizeof(ws));
+  out.write((char*) &(epoch), sizeof(epoch));
+  out.write((char*) &(minCount), sizeof(minCount));
+  out.write((char*) &(neg), sizeof(neg));
+  out.write((char*) &(wordNgrams), sizeof(wordNgrams));
+  out.write((char*) &(loss), sizeof(loss));
+  out.write((char*) &(model), sizeof(model));
+  out.write((char*) &(bucket), sizeof(bucket));
+  out.write((char*) &(minn), sizeof(minn));
+  out.write((char*) &(maxn), sizeof(maxn));
+  out.write((char*) &(lrUpdateRate), sizeof(lrUpdateRate));
+  out.write((char*) &(t), sizeof(t));
 }
 
 void Args::load(std::istream& in) {
-  in.read((char*) &(dim), sizeof(int));
-  in.read((char*) &(ws), sizeof(int));
-  in.read((char*) &(epoch), sizeof(int));
-  in.read((char*) &(minCount), sizeof(int));
-  in.read((char*) &(neg), sizeof(int));
-  in.read((char*) &(wordNgrams), sizeof(int));
-  in.read((char*) &(loss), sizeof(loss_name));
-  in.read((char*) &(model), sizeof(model_name));
-  in.read((char*) &(bucket), sizeof(int));
-  in.read((char*) &(minn), sizeof(int));
-  in.read((char*) &(maxn), sizeof(int));
-  in.read((char*) &(lrUpdateRate), sizeof(int));
-  in.read((char*) &(t), sizeof(double));
+  in.read((char*) &(dim), sizeof(dim));
+  in.read((char*) &(ws), sizeof(ws));
+  in.read((char*) &(epoch), sizeof(epoch));
+  in.read((char*) &(minCount), sizeof(minCount));
+  in.read((char*) &(neg), sizeof(neg));
+  in.read((char*) &(wordNgrams), sizeof(wordNgrams));
+  in.read((char*) &(loss), sizeof(loss));
+  in.read((char*) &(model), sizeof(model));
+  in.read((char*) &(bucket), sizeof(bucket));
+  in.read((char*) &(minn), sizeof(minn));
+  in.read((char*) &(maxn), sizeof(maxn));
+  in.read((char*) &(lrUpdateRate), sizeof(lrUpdateRate));
+  in.read((char*) &(t), sizeof(t));
 }
 
 void Args::dump(std::ostream& out) const {

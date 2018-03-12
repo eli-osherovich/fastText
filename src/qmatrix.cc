@@ -84,10 +84,10 @@ void QMatrix::save(std::ostream& out) {
     out.write((char*) &m_, sizeof(m_));
     out.write((char*) &n_, sizeof(n_));
     out.write((char*) &codesize_, sizeof(codesize_));
-    out.write((char*) codes_.data(), codesize_ * sizeof(uint8_t));
+    out.write((char*) codes_.data(), codesize_ * sizeof(*codes_.data()));
     pq_->save(out);
     if (qnorm_) {
-      out.write((char*) norm_codes_.data(), m_ * sizeof(uint8_t));
+      out.write((char*) norm_codes_.data(), m_ * sizeof(*norm_codes_.data()));
       npq_->save(out);
     }
 }
@@ -98,12 +98,12 @@ void QMatrix::load(std::istream& in) {
     in.read((char*) &n_, sizeof(n_));
     in.read((char*) &codesize_, sizeof(codesize_));
     codes_ = std::vector<uint8_t>(codesize_);
-    in.read((char*) codes_.data(), codesize_ * sizeof(uint8_t));
+    in.read((char*) codes_.data(), codesize_ * sizeof(*codes_.data()));
     pq_ = std::unique_ptr<ProductQuantizer>( new ProductQuantizer());
     pq_->load(in);
     if (qnorm_) {
       norm_codes_ = std::vector<uint8_t>(m_);
-      in.read((char*) norm_codes_.data(), m_ * sizeof(uint8_t));
+      in.read((char*) norm_codes_.data(), m_ * sizeof(*norm_codes_.data()));
       npq_ = std::unique_ptr<ProductQuantizer>( new ProductQuantizer());
       npq_->load(in);
     }

@@ -62,7 +62,7 @@ class Args {
     void printDictionaryHelp();
     void printTrainingHelp();
     void printQuantizationHelp();
-    void save(std::ostream&);
+    void save(std::ostream&) const;
     void load(std::istream&);
     void dump(std::ostream&) const;
 };
