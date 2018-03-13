@@ -116,11 +116,10 @@ void Matrix::save(std::ostream& out) {
 }
 
 void Matrix::load(std::istream& in) {
-
   in.read((char*)&m_, sizeof(m_));
   in.read((char*)&n_, sizeof(n_));
   stride_ = std::ceil(static_cast<float>(n_ * sizeof(float)) / 64) * 64 /
-    sizeof(float);
+            sizeof(float);
   data_ = ippsMalloc_32f_L(m_ * stride_);
   in.read((char*)data_, m_ * stride_ * sizeof(*data_));
 }

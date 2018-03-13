@@ -9,16 +9,15 @@
 
 #include "fasttext.h"
 
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <thread>
-#include <string>
-#include <vector>
 #include <algorithm>
-#include <stdexcept>
+#include <iomanip>
+#include <iostream>
 #include <numeric>
-
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace fasttext {
 
@@ -39,9 +38,7 @@ std::shared_ptr<const Dictionary> FastText::getDictionary() const {
   return dict_;
 }
 
-const Args FastText::getArgs() const {
-  return *args_.get();
-}
+const Args FastText::getArgs() const { return *args_.get(); }
 
 std::shared_ptr<const Matrix> FastText::getInputMatrix() const {
   return input_;
@@ -63,7 +60,7 @@ int32_t FastText::getSubwordId(const std::string& word) const {
 void FastText::getWordVector(Vector& vec, const std::string& word) const {
   const std::vector<int32_t>& ngrams = dict_->getSubwords(word);
   vec.zero();
-  for (int i = 0; i < ngrams.size(); i ++) {
+  for (int i = 0; i < ngrams.size(); i++) {
     addInputVector(vec, ngrams[i]);
   }
   if (ngrams.size() > 0) {
@@ -75,8 +72,7 @@ void FastText::getVector(Vector& vec, const std::string& word) const {
   getWordVector(vec, word);
 }
 
-void FastText::getSubwordVector(Vector& vec, const std::string& subword)
-    const {
+void FastText::getSubwordVector(Vector& vec, const std::string& subword) const {
   vec.zero();
   int32_t h = dict_->hash(subword) % args_->bucket;
   h = h + dict_->nwords();
@@ -86,8 +82,8 @@ void FastText::getSubwordVector(Vector& vec, const std::string& subword)
 void FastText::saveVectors() {
   std::ofstream ofs(args_->output + ".vec");
   if (!ofs.is_open()) {
-    throw std::invalid_argument(
-        args_->output + ".vec" + " cannot be opened for saving vectors!");
+    throw std::invalid_argument(args_->output + ".vec" +
+                                " cannot be opened for saving vectors!");
   }
   ofs << dict_->nwords() << " " << args_->dim << std::endl;
   Vector vec(args_->dim);
@@ -102,15 +98,15 @@ void FastText::saveVectors() {
 void FastText::saveOutput() {
   std::ofstream ofs(args_->output + ".output");
   if (!ofs.is_open()) {
-    throw std::invalid_argument(
-        args_->output + ".output" + " cannot be opened for saving vectors!");
+    throw std::invalid_argument(args_->output + ".output" +
+                                " cannot be opened for saving vectors!");
   }
   if (quant_) {
     throw std::invalid_argument(
         "Option -saveOutput is not supported for quantized models.");
   }
-  int32_t n = (args_->model == model_name::sup) ? dict_->nlabels()
-                                                : dict_->nwords();
+  int32_t n =
+      (args_->model == model_name::sup) ? dict_->nlabels() : dict_->nwords();
   ofs << n << " " << args_->dim << std::endl;
   Vector vec(args_->dim);
   for (int32_t i = 0; i < n; i++) {
@@ -203,7 +199,7 @@ void FastText::loadModel(std::istream& in) {
   dict_ = std::make_shared<Dictionary>(args_, in);
 
   bool quant_input;
-  in.read((char*) &quant_input, sizeof(quant_input));
+  in.read((char*)&quant_input, sizeof(quant_input));
   if (quant_input) {
     quant_ = true;
     qinput_->load(in);
@@ -218,7 +214,7 @@ void FastText::loadModel(std::istream& in) {
         "See issue #332 on Github for more information.\n");
   }
 
-  in.read((char*) &args_->qout, sizeof(args_->qout));
+  in.read((char*)&args_->qout, sizeof(args_->qout));
   if (quant_ && args_->qout) {
     qoutput_->load(in);
   } else {
@@ -241,7 +237,7 @@ void FastText::printInfo(float progress, float loss, std::ostream& log_stream) {
   double t = double(clock() - start_) / double(CLOCKS_PER_SEC);
   double lr = args_->lr * (1.0 - progress);
   double wst = 0;
-  int64_t eta = 720 * 3600; // Default to one month
+  int64_t eta = 720 * 3600;  // Default to one month
   if (progress > 0 && t >= 0) {
     eta = int(t / progress * (1 - progress) / args_->thread);
     wst = double(tokenCount_) / t;
@@ -266,10 +262,9 @@ std::vector<int32_t> FastText::selectEmbeddings(int32_t cutoff) const {
   std::vector<int32_t> idx(input_->size(0), 0);
   std::iota(idx.begin(), idx.end(), 0);
   auto eosid = dict_->getId(Dictionary::EOS);
-  std::sort(idx.begin(), idx.end(),
-      [&norms, eosid] (size_t i1, size_t i2) {
-      return eosid ==i1 || (eosid != i2 && norms[i1] > norms[i2]);
-      });
+  std::sort(idx.begin(), idx.end(), [&norms, eosid](size_t i1, size_t i2) {
+    return eosid == i1 || (eosid != i2 && norms[i1] > norms[i2]);
+  });
   idx.erase(idx.begin() + cutoff, idx.end());
   return idx;
 }
@@ -320,19 +315,16 @@ void FastText::quantize(const Args qargs) {
   }
 }
 
-void FastText::supervised(
-    Model& model,
-    float lr,
-    const std::vector<int32_t>& line,
-    const std::vector<int32_t>& labels) {
+void FastText::supervised(Model& model, float lr,
+                          const std::vector<int32_t>& line,
+                          const std::vector<int32_t>& labels) {
   if (labels.size() == 0 || line.size() == 0) return;
   std::uniform_int_distribution<> uniform(0, labels.size() - 1);
   int32_t i = uniform(model.rng);
   model.update(line, labels[i], lr);
 }
 
-void FastText::cbow(Model& model, float lr,
-                    const std::vector<int32_t>& line) {
+void FastText::cbow(Model& model, float lr, const std::vector<int32_t>& line) {
   std::vector<int32_t> bow;
   std::uniform_int_distribution<> uniform(1, args_->ws);
   for (int32_t w = 0; w < line.size(); w++) {
@@ -362,10 +354,8 @@ void FastText::skipgram(Model& model, float lr,
   }
 }
 
-std::tuple<int64_t, double, double> FastText::test(
-    std::istream& in,
-    int32_t k,
-    float threshold) {
+std::tuple<int64_t, double, double> FastText::test(std::istream& in, int32_t k,
+                                                   float threshold) {
   int32_t nexamples = 0, nlabels = 0, npredictions = 0;
   double precision = 0.0;
   std::vector<int32_t> line, labels;
@@ -375,8 +365,10 @@ std::tuple<int64_t, double, double> FastText::test(
     if (labels.size() > 0 && line.size() > 0) {
       std::vector<std::pair<float, int32_t>> modelPredictions;
       model_->predict(line, k, threshold, modelPredictions);
-      for (auto it = modelPredictions.cbegin(); it != modelPredictions.cend(); it++) {
-        if (std::find(labels.begin(), labels.end(), it->second) != labels.end()) {
+      for (auto it = modelPredictions.cbegin(); it != modelPredictions.cend();
+           it++) {
+        if (std::find(labels.begin(), labels.end(), it->second) !=
+            labels.end()) {
           precision += 1.0;
         }
       }
@@ -389,12 +381,9 @@ std::tuple<int64_t, double, double> FastText::test(
       nexamples, precision / npredictions, precision / nlabels);
 }
 
-void FastText::predict(
-  std::istream& in,
-  int32_t k,
-  std::vector<std::pair<float,std::string>>& predictions,
-  float threshold
-) const {
+void FastText::predict(std::istream& in, int32_t k,
+                       std::vector<std::pair<float, std::string>>& predictions,
+                       float threshold) const {
   std::vector<int32_t> words, labels;
   predictions.clear();
   dict_->getLine(in, words, labels);
@@ -402,20 +391,18 @@ void FastText::predict(
   if (words.empty()) return;
   Vector hidden(args_->dim);
   Vector output(dict_->nlabels());
-  std::vector<std::pair<float,int32_t>> modelPredictions;
+  std::vector<std::pair<float, int32_t>> modelPredictions;
   model_->predict(words, k, threshold, modelPredictions, hidden, output);
-  for (auto it = modelPredictions.cbegin(); it != modelPredictions.cend(); it++) {
-    predictions.push_back(std::make_pair(it->first, dict_->getLabel(it->second)));
+  for (auto it = modelPredictions.cbegin(); it != modelPredictions.cend();
+       it++) {
+    predictions.push_back(
+        std::make_pair(it->first, dict_->getLabel(it->second)));
   }
 }
 
-void FastText::predict(
-  std::istream& in,
-  int32_t k,
-  bool print_prob,
-  float threshold
-) {
-  std::vector<std::pair<float,std::string>> predictions;
+void FastText::predict(std::istream& in, int32_t k, bool print_prob,
+                       float threshold) {
+  std::vector<std::pair<float, std::string>> predictions;
   while (in.peek() != EOF) {
     predictions.clear();
     predict(in, k, predictions, threshold);
@@ -436,9 +423,7 @@ void FastText::predict(
   }
 }
 
-void FastText::getSentenceVector(
-    std::istream& in,
-    fasttext::Vector& svec) {
+void FastText::getSentenceVector(std::istream& in, fasttext::Vector& svec) {
   svec.zero();
   if (args_->model == model_name::sup) {
     std::vector<int32_t> line, labels;
@@ -502,12 +487,9 @@ void FastText::precomputeWordVectors(Matrix& wordVectors) {
   }
 }
 
-void FastText::findNN(
-    const Matrix& wordVectors,
-    const Vector& queryVec,
-    int32_t k,
-    const std::set<std::string>& banSet,
-    std::vector<std::pair<float, std::string>>& results) {
+void FastText::findNN(const Matrix& wordVectors, const Vector& queryVec,
+                      int32_t k, const std::set<std::string>& banSet,
+                      std::vector<std::pair<float, std::string>>& results) {
   results.clear();
   std::priority_queue<std::pair<float, std::string>> heap;
   float queryNorm = queryVec.norm();
@@ -524,7 +506,8 @@ void FastText::findNN(
   while (i < k && heap.size() > 0) {
     auto it = banSet.find(heap.top().second);
     if (it == banSet.end()) {
-      results.push_back(std::pair<float, std::string>(heap.top().first, heap.top().second));
+      results.push_back(
+          std::pair<float, std::string>(heap.top().first, heap.top().second));
       i++;
     }
     heap.pop();
@@ -593,19 +576,17 @@ void FastText::trainThread(int32_t threadId) {
     if (localTokenCount > args_->lrUpdateRate) {
       tokenCount_ += localTokenCount;
       localTokenCount = 0;
-      if (threadId == 0 && args_->verbose > 1)
-        loss_ = model.getLoss();
+      if (threadId == 0 && args_->verbose > 1) loss_ = model.getLoss();
     }
   }
-  if (threadId == 0)
-    loss_ = model.getLoss();
+  if (threadId == 0) loss_ = model.getLoss();
   ifs.close();
 }
 
 void FastText::loadVectors(std::string filename) {
   std::ifstream in(filename);
   std::vector<std::string> words;
-  std::shared_ptr<Matrix> mat; // temp. matrix for pretrained vectors
+  std::shared_ptr<Matrix> mat;  // temp. matrix for pretrained vectors
   int64_t n, dim;
   if (!in.is_open()) {
     throw std::invalid_argument(filename + " cannot be opened for loading!");
@@ -629,7 +610,8 @@ void FastText::loadVectors(std::string filename) {
   in.close();
 
   dict_->threshold(1, 0);
-  input_ = std::make_shared<Matrix>(dict_->nwords()+args_->bucket, args_->dim);
+  input_ =
+      std::make_shared<Matrix>(dict_->nwords() + args_->bucket, args_->dim);
   input_->uniform(1.0 / args_->dim);
 
   for (size_t i = 0; i < n; i++) {
@@ -650,8 +632,8 @@ void FastText::train(const Args args) {
   }
   std::ifstream ifs(args_->input);
   if (!ifs.is_open()) {
-    throw std::invalid_argument(
-        args_->input + " cannot be opened for training!");
+    throw std::invalid_argument(args_->input +
+                                " cannot be opened for training!");
   }
   dict_->readFromFile(ifs);
   ifs.close();
@@ -659,7 +641,8 @@ void FastText::train(const Args args) {
   if (args_->pretrainedVectors.size() != 0) {
     loadVectors(args_->pretrainedVectors);
   } else {
-    input_ = std::make_shared<Matrix>(dict_->nwords()+args_->bucket, args_->dim);
+    input_ =
+        std::make_shared<Matrix>(dict_->nwords() + args_->bucket, args_->dim);
     input_->uniform(1.0 / args_->dim);
   }
 
@@ -700,18 +683,14 @@ void FastText::startThreads() {
     threads[i].join();
   }
   if (args_->verbose > 0) {
-      std::cerr << "\r";
-      printInfo(1.0, loss_, std::cerr);
-      std::cerr << std::endl;
+    std::cerr << "\r";
+    printInfo(1.0, loss_, std::cerr);
+    std::cerr << std::endl;
   }
 }
 
-int FastText::getDimension() const {
-    return args_->dim;
-}
+int FastText::getDimension() const { return args_->dim; }
 
-bool FastText::isQuant() const {
-  return quant_;
-}
+bool FastText::isQuant() const { return quant_; }
 
-}
+}  // namespace fasttext

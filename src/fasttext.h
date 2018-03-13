@@ -12,11 +12,11 @@
 #include <time.h>
 
 #include <atomic>
-#include <memory>
-#include <set>
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <queue>
+#include <set>
 #include <tuple>
 
 #include "args.h"
@@ -60,7 +60,7 @@ class FastText {
   int32_t getWordId(const std::string&) const;
   int32_t getSubwordId(const std::string&) const;
   FASTTEXT_DEPRECATED(
-    "getVector is being deprecated and replaced by getWordVector.")
+      "getVector is being deprecated and replaced by getWordVector.")
   void getVector(Vector&, const std::string&) const;
   void getWordVector(Vector&, const std::string&) const;
   void getSubwordVector(Vector&, const std::string&) const;
@@ -82,11 +82,8 @@ class FastText {
   void loadModel(const std::string&);
   void printInfo(float, float, std::ostream&);
 
-  void supervised(
-      Model&,
-      float,
-      const std::vector<int32_t>&,
-      const std::vector<int32_t>&);
+  void supervised(Model&, float, const std::vector<int32_t>&,
+                  const std::vector<int32_t>&);
   void cbow(Model&, float, const std::vector<int32_t>&);
   void skipgram(Model&, float, const std::vector<int32_t>&);
   std::vector<int32_t> selectEmbeddings(int32_t) const;
@@ -94,19 +91,13 @@ class FastText {
   void quantize(const Args);
   std::tuple<int64_t, double, double> test(std::istream&, int32_t, float = 0.0);
   void predict(std::istream&, int32_t, bool, float = 0.0);
-  void predict(
-      std::istream&,
-      int32_t,
-      std::vector<std::pair<float, std::string>>&,
-      float = 0.0) const;
+  void predict(std::istream&, int32_t,
+               std::vector<std::pair<float, std::string>>&, float = 0.0) const;
   void ngramVectors(std::string);
   void precomputeWordVectors(Matrix&);
-  void findNN(
-      const Matrix&,
-      const Vector&,
-      int32_t,
-      const std::set<std::string>&,
-      std::vector<std::pair<float, std::string>>& results);
+  void findNN(const Matrix&, const Vector&, int32_t,
+              const std::set<std::string>&,
+              std::vector<std::pair<float, std::string>>& results);
   void analogies(int32_t);
   void trainThread(int32_t);
   void train(const Args);
@@ -115,4 +106,4 @@ class FastText {
   int getDimension() const;
   bool isQuant() const;
 };
-}
+}  // namespace fasttext

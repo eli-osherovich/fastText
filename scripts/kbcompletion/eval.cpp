@@ -7,16 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include <unordered_map>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 std::string EOS = "</s>";
 
-bool readWord(std::istream& in, std::string& word)
-{
+bool readWord(std::istream& in, std::string& word) {
   char c;
   std::streambuf& sb = *in.rdbuf();
   word.clear();
@@ -30,8 +29,7 @@ bool readWord(std::istream& in, std::string& word)
         }
         continue;
       } else {
-        if (c == '\n')
-          sb.sungetc();
+        if (c == '\n') sb.sungetc();
         return true;
       }
     }
@@ -44,10 +42,12 @@ bool readWord(std::istream& in, std::string& word)
 int main(int argc, char** argv) {
   int k = 10;
   if (argc < 4) {
-    std::cerr<<"eval <pred> <gt> <kb> [<k>]"<<std::endl;
+    std::cerr << "eval <pred> <gt> <kb> [<k>]" << std::endl;
     exit(1);
   }
-  if (argc == 5) { k = atoi(argv[4]);}
+  if (argc == 5) {
+    k = atoi(argv[4]);
+  }
 
   std::string predfn(argv[1]);
   std::ifstream predf(predfn);
@@ -61,15 +61,19 @@ int main(int argc, char** argv) {
     exit(EXIT_FAILURE);
   }
 
-  std::unordered_map< std::string,
-    std::unordered_map< std::string, bool > > KB;
+  std::unordered_map<std::string, std::unordered_map<std::string, bool> > KB;
 
   while (kbf.peek() != EOF) {
     std::string label, key, word;
     while (readWord(kbf, word)) {
-      if (word == EOS) {break;}
-      if (word.find("__label__") == 0) {label = word;}
-      else {key += "|" + word;}
+      if (word == EOS) {
+        break;
+      }
+      if (word.find("__label__") == 0) {
+        label = word;
+      } else {
+        key += "|" + word;
+      }
     }
     KB[key][label] = true;
   }
@@ -79,31 +83,49 @@ int main(int argc, char** argv) {
   int32_t nexamples = 0;
   while (predf.peek() != EOF || gtf.peek() != EOF) {
     if (predf.peek() == EOF || gtf.peek() == EOF) {
-      std::cerr<<"pred / gt files have diff sizes"<<std::endl;
+      std::cerr << "pred / gt files have diff sizes" << std::endl;
       exit(1);
     }
     std::string label, key, word;
 
     while (readWord(gtf, word)) {
-      if (word == EOS) {break;}
-      if ( word.find("__label__") == 0) {label = word;}
-      else {key += "|" + word;}
+      if (word == EOS) {
+        break;
+      }
+      if (word.find("__label__") == 0) {
+        label = word;
+      } else {
+        key += "|" + word;
+      }
     }
     if (KB.find(key) == KB.end()) {
-      std::cerr<<"empty key!"<<std::endl; exit(1);
+      std::cerr << "empty key!" << std::endl;
+      exit(1);
     }
 
-    int count = 0;bool eval = true;
+    int count = 0;
+    bool eval = true;
     while (readWord(predf, word)) {
-      if (word == EOS) {break;}
-      if (!eval) {continue;}
-      if (label == word) {precision += 1.0; eval = false;}
-      else if (KB[key].find(word) == KB[key].end()) {count++;}
-      if (count == k) {eval = false;}
+      if (word == EOS) {
+        break;
+      }
+      if (!eval) {
+        continue;
+      }
+      if (label == word) {
+        precision += 1.0;
+        eval = false;
+      } else if (KB[key].find(word) == KB[key].end()) {
+        count++;
+      }
+      if (count == k) {
+        eval = false;
+      }
     }
     nexamples++;
   }
-  predf.close(); gtf.close();
+  predf.close();
+  gtf.close();
   std::cout << "N:\t" << nexamples << std::endl;
   std::cout << "R@" << k << "\t" << precision / nexamples << std::endl;
 }

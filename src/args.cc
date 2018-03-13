@@ -54,7 +54,7 @@ std::string Args::lossToString(loss_name ln) const {
     case loss_name::softmax:
       return "softmax";
   }
-  return "Unknown loss!"; // should never happen
+  return "Unknown loss!";  // should never happen
 }
 
 std::string Args::boolToString(bool b) const {
@@ -74,7 +74,7 @@ std::string Args::modelToString(model_name mn) const {
     case model_name::sup:
       return "sup";
   }
-  return "Unknown model name!"; // should never happen
+  return "Unknown model name!";  // should never happen
 }
 
 void Args::parseArgs(const std::vector<std::string>& args) {
@@ -194,100 +194,127 @@ void Args::printHelp() {
   printQuantizationHelp();
 }
 
-
 void Args::printBasicHelp() {
-  std::cerr
-    << "\nThe following arguments are mandatory:\n"
-    << "  -input              training file path\n"
-    << "  -output             output file path\n"
-    << "\nThe following arguments are optional:\n"
-    << "  -verbose            verbosity level [" << verbose << "]\n";
+  std::cerr << "\nThe following arguments are mandatory:\n"
+            << "  -input              training file path\n"
+            << "  -output             output file path\n"
+            << "\nThe following arguments are optional:\n"
+            << "  -verbose            verbosity level [" << verbose << "]\n";
 }
 
 void Args::printDictionaryHelp() {
-  std::cerr
-    << "\nThe following arguments for the dictionary are optional:\n"
-    << "  -minCount           minimal number of word occurences [" << minCount << "]\n"
-    << "  -minCountLabel      minimal number of label occurences [" << minCountLabel << "]\n"
-    << "  -wordNgrams         max length of word ngram [" << wordNgrams << "]\n"
-    << "  -bucket             number of buckets [" << bucket << "]\n"
-    << "  -minn               min length of char ngram [" << minn << "]\n"
-    << "  -maxn               max length of char ngram [" << maxn << "]\n"
-    << "  -t                  sampling threshold [" << t << "]\n"
-    << "  -label              labels prefix [" << label << "]\n";
+  std::cerr << "\nThe following arguments for the dictionary are optional:\n"
+            << "  -minCount           minimal number of word occurences ["
+            << minCount << "]\n"
+            << "  -minCountLabel      minimal number of label occurences ["
+            << minCountLabel << "]\n"
+            << "  -wordNgrams         max length of word ngram [" << wordNgrams
+            << "]\n"
+            << "  -bucket             number of buckets [" << bucket << "]\n"
+            << "  -minn               min length of char ngram [" << minn
+            << "]\n"
+            << "  -maxn               max length of char ngram [" << maxn
+            << "]\n"
+            << "  -t                  sampling threshold [" << t << "]\n"
+            << "  -label              labels prefix [" << label << "]\n";
 }
 
 void Args::printTrainingHelp() {
-  std::cerr
-    << "\nThe following arguments for training are optional:\n"
-    << "  -lr                 learning rate [" << lr << "]\n"
-    << "  -lrUpdateRate       change the rate of updates for the learning rate [" << lrUpdateRate << "]\n"
-    << "  -dim                size of word vectors [" << dim << "]\n"
-    << "  -ws                 size of the context window [" << ws << "]\n"
-    << "  -epoch              number of epochs [" << epoch << "]\n"
-    << "  -neg                number of negatives sampled [" << neg << "]\n"
-    << "  -loss               loss function {ns, hs, softmax} [" << lossToString(loss) << "]\n"
-    << "  -thread             number of threads [" << thread << "]\n"
-    << "  -pretrainedVectors  pretrained word vectors for supervised learning ["<< pretrainedVectors <<"]\n"
-    << "  -saveOutput         whether output params should be saved [" << boolToString(saveOutput) << "]\n";
+  std::cerr << "\nThe following arguments for training are optional:\n"
+            << "  -lr                 learning rate [" << lr << "]\n"
+            << "  -lrUpdateRate       change the rate of updates for the "
+               "learning rate ["
+            << lrUpdateRate << "]\n"
+            << "  -dim                size of word vectors [" << dim << "]\n"
+            << "  -ws                 size of the context window [" << ws
+            << "]\n"
+            << "  -epoch              number of epochs [" << epoch << "]\n"
+            << "  -neg                number of negatives sampled [" << neg
+            << "]\n"
+            << "  -loss               loss function {ns, hs, softmax} ["
+            << lossToString(loss) << "]\n"
+            << "  -thread             number of threads [" << thread << "]\n"
+            << "  -pretrainedVectors  pretrained word vectors for supervised "
+               "learning ["
+            << pretrainedVectors << "]\n"
+            << "  -saveOutput         whether output params should be saved ["
+            << boolToString(saveOutput) << "]\n";
 }
 
 void Args::printQuantizationHelp() {
   std::cerr
-    << "\nThe following arguments for quantization are optional:\n"
-    << "  -cutoff             number of words and ngrams to retain [" << cutoff << "]\n"
-    << "  -retrain            whether embeddings are finetuned if a cutoff is applied [" << boolToString(retrain) << "]\n"
-    << "  -qnorm              whether the norm is quantized separately [" << boolToString(qnorm) << "]\n"
-    << "  -qout               whether the classifier is quantized [" << boolToString(qout) << "]\n"
-    << "  -dsub               size of each sub-vector [" << dsub << "]\n";
+      << "\nThe following arguments for quantization are optional:\n"
+      << "  -cutoff             number of words and ngrams to retain ["
+      << cutoff << "]\n"
+      << "  -retrain            whether embeddings are finetuned if a cutoff "
+         "is applied ["
+      << boolToString(retrain) << "]\n"
+      << "  -qnorm              whether the norm is quantized separately ["
+      << boolToString(qnorm) << "]\n"
+      << "  -qout               whether the classifier is quantized ["
+      << boolToString(qout) << "]\n"
+      << "  -dsub               size of each sub-vector [" << dsub << "]\n";
 }
 
- void Args::save(std::ostream & out) const {
-  out.write((char*) &(dim), sizeof(dim));
-  out.write((char*) &(ws), sizeof(ws));
-  out.write((char*) &(epoch), sizeof(epoch));
-  out.write((char*) &(minCount), sizeof(minCount));
-  out.write((char*) &(neg), sizeof(neg));
-  out.write((char*) &(wordNgrams), sizeof(wordNgrams));
-  out.write((char*) &(loss), sizeof(loss));
-  out.write((char*) &(model), sizeof(model));
-  out.write((char*) &(bucket), sizeof(bucket));
-  out.write((char*) &(minn), sizeof(minn));
-  out.write((char*) &(maxn), sizeof(maxn));
-  out.write((char*) &(lrUpdateRate), sizeof(lrUpdateRate));
-  out.write((char*) &(t), sizeof(t));
+void Args::save(std::ostream& out) const {
+  out.write((char*)&(dim), sizeof(dim));
+  out.write((char*)&(ws), sizeof(ws));
+  out.write((char*)&(epoch), sizeof(epoch));
+  out.write((char*)&(minCount), sizeof(minCount));
+  out.write((char*)&(neg), sizeof(neg));
+  out.write((char*)&(wordNgrams), sizeof(wordNgrams));
+  out.write((char*)&(loss), sizeof(loss));
+  out.write((char*)&(model), sizeof(model));
+  out.write((char*)&(bucket), sizeof(bucket));
+  out.write((char*)&(minn), sizeof(minn));
+  out.write((char*)&(maxn), sizeof(maxn));
+  out.write((char*)&(lrUpdateRate), sizeof(lrUpdateRate));
+  out.write((char*)&(t), sizeof(t));
 }
 
 void Args::load(std::istream& in) {
-  in.read((char*) &(dim), sizeof(dim));
-  in.read((char*) &(ws), sizeof(ws));
-  in.read((char*) &(epoch), sizeof(epoch));
-  in.read((char*) &(minCount), sizeof(minCount));
-  in.read((char*) &(neg), sizeof(neg));
-  in.read((char*) &(wordNgrams), sizeof(wordNgrams));
-  in.read((char*) &(loss), sizeof(loss));
-  in.read((char*) &(model), sizeof(model));
-  in.read((char*) &(bucket), sizeof(bucket));
-  in.read((char*) &(minn), sizeof(minn));
-  in.read((char*) &(maxn), sizeof(maxn));
-  in.read((char*) &(lrUpdateRate), sizeof(lrUpdateRate));
-  in.read((char*) &(t), sizeof(t));
+  in.read((char*)&(dim), sizeof(dim));
+  in.read((char*)&(ws), sizeof(ws));
+  in.read((char*)&(epoch), sizeof(epoch));
+  in.read((char*)&(minCount), sizeof(minCount));
+  in.read((char*)&(neg), sizeof(neg));
+  in.read((char*)&(wordNgrams), sizeof(wordNgrams));
+  in.read((char*)&(loss), sizeof(loss));
+  in.read((char*)&(model), sizeof(model));
+  in.read((char*)&(bucket), sizeof(bucket));
+  in.read((char*)&(minn), sizeof(minn));
+  in.read((char*)&(maxn), sizeof(maxn));
+  in.read((char*)&(lrUpdateRate), sizeof(lrUpdateRate));
+  in.read((char*)&(t), sizeof(t));
 }
 
 void Args::dump(std::ostream& out) const {
-  out << "dim" << " " << dim << std::endl;
-  out << "ws" << " " << ws << std::endl;
-  out << "epoch" << " " << epoch << std::endl;
-  out << "minCount" << " " << minCount << std::endl;
-  out << "neg" << " " << neg << std::endl;
-  out << "wordNgrams" << " " << wordNgrams << std::endl;
-  out << "loss" << " " << lossToString(loss) << std::endl;
-  out << "model" << " " << modelToString(model) << std::endl;
-  out << "bucket" << " " << bucket << std::endl;
-  out << "minn" << " " << minn << std::endl;
-  out << "maxn" << " " << maxn << std::endl;
-  out << "lrUpdateRate" << " " << lrUpdateRate << std::endl;
-  out << "t" << " " << t << std::endl;
+  out << "dim"
+      << " " << dim << std::endl;
+  out << "ws"
+      << " " << ws << std::endl;
+  out << "epoch"
+      << " " << epoch << std::endl;
+  out << "minCount"
+      << " " << minCount << std::endl;
+  out << "neg"
+      << " " << neg << std::endl;
+  out << "wordNgrams"
+      << " " << wordNgrams << std::endl;
+  out << "loss"
+      << " " << lossToString(loss) << std::endl;
+  out << "model"
+      << " " << modelToString(model) << std::endl;
+  out << "bucket"
+      << " " << bucket << std::endl;
+  out << "minn"
+      << " " << minn << std::endl;
+  out << "maxn"
+      << " " << maxn << std::endl;
+  out << "lrUpdateRate"
+      << " " << lrUpdateRate << std::endl;
+  out << "t"
+      << " " << t << std::endl;
 }
 
-}
+}  // namespace fasttext
