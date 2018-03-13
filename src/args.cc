@@ -16,34 +16,33 @@
 
 namespace fasttext {
 
-Args::Args() {
-  lr = 0.05;
-  dim = 100;
-  ws = 5;
-  epoch = 5;
-  minCount = 5;
-  minCountLabel = 0;
-  neg = 5;
-  wordNgrams = 1;
-  loss = loss_name::ns;
-  model = model_name::sg;
-  bucket = 2000000;
-  minn = 3;
-  maxn = 6;
-  thread = 12;
-  lrUpdateRate = 100;
-  t = 1e-4;
-  label = "__label__";
-  verbose = 2;
-  pretrainedVectors = "";
-  saveOutput = false;
+Args::Args()
+    : lr(0.05),
+      lrUpdateRate(100),
+      dim(100),
+      ws(5),
+      epoch(5),
+      minCount(5),
+      minCountLabel(0),
+      neg(5),
+      wordNgrams(1),
+      loss(loss_name::ns),
+      model(model_name::sg),
+      bucket(2000000),
+      minn(3),
+      maxn(6),
+      thread(12),
+      t(1e-4),
+      label("__label__"),
+      verbose(2),
+      pretrainedVectors(""),
+      saveOutput(false),
 
-  qout = false;
-  retrain = false;
-  qnorm = false;
-  cutoff = 0;
-  dsub = 2;
-}
+      qout(false),
+      retrain(false),
+      qnorm(false),
+      cutoff(0),
+      dsub(2) {}
 
 std::string Args::lossToString(loss_name ln) const {
   switch (ln) {
@@ -58,11 +57,7 @@ std::string Args::lossToString(loss_name ln) const {
 }
 
 std::string Args::boolToString(bool b) const {
-  if (b) {
-    return "true";
-  } else {
-    return "false";
-  }
+  return b ? "true" : "false";
 }
 
 std::string Args::modelToString(model_name mn) const {

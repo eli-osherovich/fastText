@@ -60,9 +60,9 @@ class Dictionary {
                      const std::vector<int32_t>& hashes, int32_t n) const;
 
  public:
-  static const std::string EOS;
-  static const std::string BOW;
-  static const std::string EOW;
+  static constexpr char EOS[] = "</s>";
+  static constexpr char BOW[] = "<";
+  static constexpr char EOW[] = ">";
 
   explicit Dictionary(std::shared_ptr<Args>);
   explicit Dictionary(std::shared_ptr<Args>, std::istream&);

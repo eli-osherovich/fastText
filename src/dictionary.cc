@@ -20,9 +20,9 @@
 
 namespace fasttext {
 
-const std::string Dictionary::EOS = "</s>";
-const std::string Dictionary::BOW = "<";
-const std::string Dictionary::EOW = ">";
+constexpr char Dictionary::EOS[];
+constexpr char Dictionary::BOW[];
+constexpr char Dictionary::EOW[];
 
 Dictionary::Dictionary(std::shared_ptr<Args> args)
     : args_(args),
@@ -51,7 +51,7 @@ int32_t Dictionary::find(const std::string& w, uint32_t h) const {
   int32_t word2intsize = word2int_.size();
   int32_t id = h % word2intsize;
   while (word2int_[id] != -1 && words_[word2int_[id]].word != w) {
-    id = (id + 1) % word2intsize;
+    id = (id + 1 < word2intsize) ? id + 1 : 0;
   }
   return id;
 }
@@ -338,8 +338,7 @@ int32_t Dictionary::getLine(std::istream& in, std::vector<int32_t>& words,
   reset(in);
   words.clear();
   while (readWord(in, token)) {
-    int32_t h = find(token);
-    int32_t wid = word2int_[h];
+    int32_t wid = getId(token);
     if (wid < 0) continue;
 
     ntokens++;
