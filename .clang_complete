@@ -1,1 +1,2 @@
--std=c++0x
+-std=c++11
+-Wall
