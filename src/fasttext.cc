@@ -652,13 +652,13 @@ void FastText::train(const Args args) {
     output_ = std::make_shared<Matrix>(dict_->nwords(), args_->dim);
   }
   output_->zero();
-  startThreads();
   model_ = std::make_shared<Model>(input_, output_, args_, 0);
   if (args_->model == model_name::sup) {
     model_->setTargetCounts(dict_->getCounts(entry_type::label));
   } else {
     model_->setTargetCounts(dict_->getCounts(entry_type::word));
   }
+  startThreads();
 }
 
 void FastText::startThreads() {
