@@ -8,7 +8,7 @@
 #
 
 CXX = c++
-CXXFLAGS = -pthread -std=c++0x -march=native -m64 -L${IPPROOT}/lib/intel64
+CXXFLAGS = -pthread -std=c++0x -march=native -m64 -fomit-frame-pointer -L${IPPROOT}/lib/intel64
 OBJS = args.o dictionary.o productquantizer.o matrix.o qmatrix.o vector.o model.o utils.o fasttext.o
 INCLUDES = -I. -I${IPPROOT}/include
 
