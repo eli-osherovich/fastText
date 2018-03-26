@@ -51,6 +51,7 @@ class Args {
   bool saveOutput;
 
   bool qout;
+  bool has_weight = false;
   bool retrain;
   bool qnorm;
   size_t cutoff;

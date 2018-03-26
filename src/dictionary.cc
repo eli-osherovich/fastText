@@ -9,14 +9,18 @@
 
 #include "dictionary.h"
 
+#include <boost/tokenizer.hpp>
+
 #include <assert.h>
 
 #include <algorithm>
 #include <cmath>
+#include <deque>
 #include <fstream>
 #include <iostream>
 #include <iterator>
 #include <stdexcept>
+#include <string>
 
 namespace fasttext {
 
@@ -62,12 +66,12 @@ void Dictionary::add(const std::string& w) {
   if (word2int_[h] == -1) {
     entry e;
     e.word = w;
-    e.count = 1;
+    e.weight = cur_weight_;
     e.type = getType(w);
     words_.push_back(e);
     word2int_[h] = size_++;
   } else {
-    words_[word2int_[h]].count++;
+    words_[word2int_[h]].weight += cur_weight_;
   }
 }
 
@@ -203,28 +207,31 @@ void Dictionary::initNgrams() {
 }
 
 bool Dictionary::readWord(std::istream& in, std::string& word) const {
-  int c;
-  std::streambuf& sb = *in.rdbuf();
-  word.clear();
-  while ((c = sb.sbumpc()) != EOF) {
-    if (c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v' ||
-        c == '\f' || c == '\0') {
-      if (word.empty()) {
-        if (c == '\n') {
-          word += EOS;
-          return true;
-        }
-        continue;
-      } else {
-        if (c == '\n') sb.sungetc();
-        return true;
-      }
-    }
-    word.push_back(c);
+next_word:
+  if (!cur_words_.empty()) {
+    word = cur_words_.front();
+    cur_words_.pop_front();
+    return true;
   }
-  // trigger eofbit
-  in.get();
-  return !word.empty();
+
+  // Special treatment for the first column that may be 'weight'.
+  if (args_->has_weight) {
+    if (getline(in, cur_line_, '\t')) {
+      cur_weight_ = std::stof(cur_line_);
+      std::cout << cur_weight_ << std::endl;
+    } else {
+      return false;
+    }
+  }
+  // The rest of the line is assumed to be a sequence of words.
+  if (getline(in, cur_line_)) {
+    boost::tokenizer<> tok(cur_line_);
+    cur_words_.assign(tok.begin(), tok.end());
+    cur_words_.push_back(EOS);
+  } else {
+    return false;
+  }
+  goto next_word;
 }
 
 void Dictionary::readFromFile(std::istream& in) {
@@ -257,14 +264,15 @@ void Dictionary::readFromFile(std::istream& in) {
 void Dictionary::threshold(int64_t t, int64_t tl) {
   sort(words_.begin(), words_.end(), [](const entry& e1, const entry& e2) {
     if (e1.type != e2.type) return e1.type < e2.type;
-    return e1.count > e2.count;
+    return e1.weight > e2.weight;
   });
-  words_.erase(remove_if(words_.begin(), words_.end(),
-                         [&](const entry& e) {
-                           return (e.type == entry_type::word && e.count < t) ||
-                                  (e.type == entry_type::label && e.count < tl);
-                         }),
-               words_.end());
+  words_.erase(
+      remove_if(words_.begin(), words_.end(),
+                [&](const entry& e) {
+                  return (e.type == entry_type::word && e.weight < t) ||
+                         (e.type == entry_type::label && e.weight < tl);
+                }),
+      words_.end());
   words_.shrink_to_fit();
   size_ = 0;
   nwords_ = 0;
@@ -281,15 +289,15 @@ void Dictionary::threshold(int64_t t, int64_t tl) {
 void Dictionary::initTableDiscard() {
   pdiscard_.resize(size_);
   for (size_t i = 0; i < size_; i++) {
-    float f = float(words_[i].count) / float(ntokens_);
+    float f = float(words_[i].weight) / float(ntokens_);
     pdiscard_[i] = std::sqrt(args_->t / f) + args_->t / f;
   }
 }
 
-std::vector<int64_t> Dictionary::getCounts(entry_type type) const {
-  std::vector<int64_t> counts;
+std::vector<float> Dictionary::getCounts(entry_type type) const {
+  std::vector<float> counts;
   for (auto& w : words_) {
-    if (w.type == type) counts.push_back(w.count);
+    if (w.type == type) counts.push_back(w.weight);
   }
   return counts;
 }
@@ -407,7 +415,7 @@ void Dictionary::save(std::ostream& out) const {
     entry e = words_[i];
     out.write(e.word.data(), e.word.size() * sizeof(*e.word.data()));
     out.put(0);
-    out.write((char*)&(e.count), sizeof(e.count));
+    out.write((char*)&(e.weight), sizeof(e.weight));
     out.write((char*)&(e.type), sizeof(e.type));
   }
   for (const auto pair : pruneidx_) {
@@ -429,7 +437,7 @@ void Dictionary::load(std::istream& in) {
     while ((c = in.get()) != 0) {
       e.word.push_back(c);
     }
-    in.read((char*)&e.count, sizeof(e.count));
+    in.read((char*)&e.weight, sizeof(e.weight));
     in.read((char*)&e.type, sizeof(e.type));
     words_.push_back(e);
   }
@@ -497,7 +505,7 @@ void Dictionary::dump(std::ostream& out) const {
     if (it.type == entry_type::label) {
       entryType = "label";
     }
-    out << it.word << " " << it.count << " " << entryType << std::endl;
+    out << it.word << " " << it.weight << " " << entryType << std::endl;
   }
 }
 

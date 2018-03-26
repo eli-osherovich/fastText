@@ -25,7 +25,7 @@ struct Node {
   int32_t parent;
   int32_t left;
   int32_t right;
-  int64_t count;
+  float weight;
   bool binary;
 };
 
@@ -84,9 +84,9 @@ class Model {
   void computeOutputSoftmax(Vector&, Vector&) const;
   void computeOutputSoftmax();
 
-  void setTargetCounts(const std::vector<int64_t>&);
-  void initTableNegatives(const std::vector<int64_t>&);
-  void buildTree(const std::vector<int64_t>&);
+  void setTargetCounts(const std::vector<float>&);
+  void initTableNegatives(const std::vector<float>&);
+  void buildTree(const std::vector<float>&);
   float getLoss() const;
   float sigmoid(float) const;
   float log(float) const;

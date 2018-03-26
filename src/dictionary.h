@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <deque>
 #include <istream>
 #include <memory>
 #include <ostream>
@@ -16,7 +17,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
 #include "args.h"
 
 namespace fasttext {
@@ -26,7 +26,7 @@ enum class entry_type : int8_t { word = 0, label = 1 };
 
 struct entry {
   std::string word;
-  int64_t count;
+  float weight;
   entry_type type;
   std::vector<int32_t> subwords;
 };
@@ -89,7 +89,7 @@ class Dictionary {
   std::string getLabel(int32_t) const;
   void save(std::ostream&) const;
   void load(std::istream&);
-  std::vector<int64_t> getCounts(entry_type) const;
+  std::vector<float> getCounts(entry_type) const;
   int32_t getLine(std::istream&, std::vector<int32_t>&,
                   std::vector<int32_t>&) const;
   int32_t getLine(std::istream&, std::vector<int32_t>&,
@@ -98,6 +98,10 @@ class Dictionary {
   void prune(std::vector<int32_t>&);
   bool isPruned() { return pruneidx_size_ >= 0; }
   void dump(std::ostream&) const;
+
+  mutable std::string cur_line_;
+  mutable std::deque<std::string> cur_words_;
+  mutable float cur_weight_ = 1.0f;
 };
 
 }  // namespace fasttext

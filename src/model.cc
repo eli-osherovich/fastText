@@ -237,17 +237,17 @@ void Model::update(const std::vector<int32_t>& input, int32_t target,
   }
 }
 
-void Model::setTargetCounts(const std::vector<int64_t>& counts) {
-  assert(counts.size() == osz_);
+void Model::setTargetCounts(const std::vector<float>& weights) {
+  assert(weights.size() == osz_);
   if (args_->loss == loss_name::ns) {
-    initTableNegatives(counts);
+    initTableNegatives(weights);
   }
   if (args_->loss == loss_name::hs) {
-    buildTree(counts);
+    buildTree(weights);
   }
 }
 
-void Model::initTableNegatives(const std::vector<int64_t>& counts) {
+void Model::initTableNegatives(const std::vector<float>& counts) {
   float z = 0.0;
   for (size_t i = 0; i < counts.size(); i++) {
     z += pow(counts[i], 0.5);
@@ -270,24 +270,24 @@ int32_t Model::getNegative(int32_t target) {
   return negative;
 }
 
-void Model::buildTree(const std::vector<int64_t>& counts) {
+void Model::buildTree(const std::vector<float>& weights) {
   tree.resize(2 * osz_ - 1);
   for (int32_t i = 0; i < 2 * osz_ - 1; i++) {
     tree[i].parent = -1;
     tree[i].left = -1;
     tree[i].right = -1;
-    tree[i].count = 1e15;
+    tree[i].weight = 1e15;
     tree[i].binary = false;
   }
   for (int32_t i = 0; i < osz_; i++) {
-    tree[i].count = counts[i];
+    tree[i].weight = weights[i];
   }
   int32_t leaf = osz_ - 1;
   int32_t node = osz_;
   for (int32_t i = osz_; i < 2 * osz_ - 1; i++) {
     int32_t mini[2];
     for (int32_t j = 0; j < 2; j++) {
-      if (leaf >= 0 && tree[leaf].count < tree[node].count) {
+      if (leaf >= 0 && tree[leaf].weight < tree[node].weight) {
         mini[j] = leaf--;
       } else {
         mini[j] = node++;
@@ -295,7 +295,7 @@ void Model::buildTree(const std::vector<int64_t>& counts) {
     }
     tree[i].left = mini[0];
     tree[i].right = mini[1];
-    tree[i].count = tree[mini[0]].count + tree[mini[1]].count;
+    tree[i].weight = tree[mini[0]].weight + tree[mini[1]].weight;
     tree[mini[0]].parent = i;
     tree[mini[1]].parent = i;
     tree[mini[1]].binary = true;

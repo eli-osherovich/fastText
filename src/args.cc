@@ -157,6 +157,9 @@ void Args::parseArgs(const std::vector<std::string>& args) {
       } else if (args[ai] == "-qout") {
         qout = true;
         ai--;
+      } else if (args[ai] == "-weighted") {
+        has_weight = true;
+        ai--;
       } else if (args[ai] == "-cutoff") {
         cutoff = std::stoi(args.at(ai + 1));
       } else if (args[ai] == "-dsub") {
