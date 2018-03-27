@@ -10,6 +10,8 @@
 #include "fasttext.h"
 
 #include <algorithm>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 #include <iomanip>
 #include <iostream>
 #include <numeric>
@@ -18,8 +20,8 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/range/adaptor/transformed.hpp>
+
+#include "file_reader.hpp"
 
 namespace fasttext {
 
@@ -550,7 +552,14 @@ void FastText::analogies(int32_t k) {
 
 void FastText::trainThread(int32_t threadId) {
   std::ifstream ifs(args_->input);
-  utils::seek(ifs, threadId * utils::size(ifs) / args_->thread);
+  auto file_size = utils::size(ifs);
+  ifs.close();
+
+  FileReader input(args_->input, threadId * file_size / args_->thread,
+                   (threadId + 1) * file_size / args_->thread);
+
+  std::string cur_line;
+  float weight;
 
   Model model(input_, output_, args_, threadId);
   if (args_->model == model_name::sup) {
@@ -569,16 +578,17 @@ void FastText::trainThread(int32_t threadId) {
       localTokenCount += dict_->getLine(ifs, line, labels);
       supervised(model, lr, line, labels);
     } else if (args_->model == model_name::cbow) {
-      float weight;
-      localTokenCount += dict_->getLine(ifs, line, model.rng, &weight);
+      input.getline(&cur_line);
+      localTokenCount +=
+          dict_->convertLine(cur_line, model.rng, &line, &weight);
       cbow(model, lr, line);
     } else if (args_->model == model_name::sg) {
-      float weight;
-      localTokenCount += dict_->getLine(ifs, line, model.rng, &weight);
+      input.getline(&cur_line);
+      localTokenCount +=
+          dict_->convertLine(cur_line, model.rng, &line, &weight);
       // for (auto ww : line)
       //   std::cout << dict_->getWord(ww) << " ";
-      // std::cout << weight << std::endl;
-      // for (int i = 0; i < weight; ++i)
+      // std::cout << weight << " " << localTokenCount << std::endl;
       skipgram(model, lr, line, weight);
     }
     if (localTokenCount > args_->lrUpdateRate) {

@@ -9,7 +9,7 @@
 
 CXX = c++
 CXXFLAGS = -pthread -std=c++0x -march=native -m64 -fomit-frame-pointer -L${IPPROOT}/lib/intel64
-OBJS = args.o dictionary.o productquantizer.o matrix.o qmatrix.o vector.o model.o utils.o fasttext.o
+OBJS = args.o dictionary.o productquantizer.o matrix.o qmatrix.o vector.o model.o utils.o fasttext.o file_reader.o
 INCLUDES = -I. -I${IPPROOT}/include
 
 opt: CXXFLAGS += -O3 -funroll-loops
@@ -44,6 +44,9 @@ utils.o: src/utils.cc src/utils.h
 
 fasttext.o: src/fasttext.cc src/*.h
 	$(CXX) $(CXXFLAGS) -c src/fasttext.cc
+
+file_reader.o: src/file_reader.cpp src/file_reader.hpp
+	$(CXX) $(CXXFLAGS) -c src/file_reader.cpp
 
 fasttext: $(OBJS) src/fasttext.cc
 	$(CXX) $(CXXFLAGS) $(OBJS) -lipps -lm -ldl src/main.cc -o fasttext

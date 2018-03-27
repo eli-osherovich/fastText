@@ -62,19 +62,19 @@ int32_t Dictionary::find(const std::string& w, uint32_t h) const {
   return id;
 }
 
-void Dictionary::add(const std::string& w) {
+void Dictionary::add(const std::string& w, float weight) {
   int32_t h = find(w);
   ntokens_++;
-  total_weight_ += cur_weight_;
+  total_weight_ += weight;
   if (word2int_[h] == -1) {
     entry e;
     e.word = w;
-    e.weight = cur_weight_;
+    e.weight = weight;
     e.type = getType(w);
     words_.push_back(e);
     word2int_[h] = size_++;
   } else {
-    words_[word2int_[h]].weight += cur_weight_;
+    words_[word2int_[h]].weight += weight;
   }
 }
 
@@ -209,44 +209,31 @@ void Dictionary::initNgrams() {
   }
 }
 
-bool Dictionary::readWord(std::istream& in, std::string& word) const {
-next_word:
-  if (!cur_words_.empty()) {
-    word = cur_words_.front();
-    cur_words_.pop_front();
-    return true;
-  }
-
-  if (!getline(in, cur_line_)) {
-    return false;
-  }
-  // Special treatment for the first column that may be 'weight'.
-  if (args_->has_weight) {
-    std::size_t p;
-    cur_weight_ = std::stof(cur_line_, &p);
-    cur_line_.erase(0, p);
-  }
-
-  // The rest of the line is a sequence of words.
-  boost::tokenizer<> tok(cur_line_);
-  cur_words_.assign(tok.begin(), tok.end());
-  cur_words_.push_back(EOS);
-
-  goto next_word;
-}
 
 void Dictionary::readFromFile(std::istream& in) {
-  std::string word;
+  std::string cur_line;
   int64_t minThreshold = 1;
-  while (readWord(in, word)) {
-    add(word);
-    if (ntokens_ % 1000000 == 0 && args_->verbose > 1) {
-      std::cerr << "\rRead " << ntokens_ / 1000000 << "M words" << std::flush;
+  float weight = 1.0f;
+
+  while (std::getline(in, cur_line)) {
+    // Special treatment for the first column that may be 'weight'.
+    std::size_t p = 0;
+    if (args_->has_weight) {
+      weight = std::stof(cur_line, &p);
     }
-    if (size_ > 0.75 * MAX_VOCAB_SIZE) {
-      minThreshold++;
-      threshold(minThreshold, minThreshold);
+    // The rest of the line is a sequence of words.
+    boost::tokenizer<> tok(cur_line.cbegin() + p, cur_line.cend());
+    for (const std::string& word : tok) {
+      add(word, weight);
+      if (ntokens_ % 1000000 == 0 && args_->verbose > 1) {
+        std::cerr << "\rRead " << ntokens_ / 1000000 << "M words" << std::flush;
+      }
+      if (size_ > 0.75 * MAX_VOCAB_SIZE) {
+        minThreshold++;
+        threshold(minThreshold, minThreshold);
+      }
     }
+    add(EOS, weight);
   }
   threshold(args_->minCount, args_->minCountLabel);
   initTableDiscard();
@@ -338,27 +325,38 @@ void Dictionary::reset(std::istream& in) const {
   }
 }
 
-int32_t Dictionary::getLine(std::istream& in, std::vector<int32_t>& words,
-                            std::minstd_rand& rng, float* weight) const {
+int32_t Dictionary::convertLine(const std::string& line, std::minstd_rand& rng,
+                                std::vector<int32_t>* words,
+                                float* weight) const {
   std::uniform_real_distribution<> uniform(0, 1);
-  std::string token;
-  int32_t ntokens = 0;
 
-  reset(in);
-  words.clear();
-  while (readWord(in, token)) {
+  words->clear();
+
+  // Special treatment for the first column that may be 'weight'.
+  std::size_t p = 0;
+  if (args_->has_weight) {
+    *weight = std::stof(line, &p);
+  } else {
+    *weight = 1.0f;
+  }
+
+  // The rest of the line is a sequence of words.
+  boost::tokenizer<> tok(line.cbegin() + p, line.cend());
+  int32_t ntokens = 0;
+  for (const std::string& token : tok) {
     int32_t wid = getId(token);
     if (wid < 0) continue;
 
-    ntokens++;
+    ++ntokens;
     if (getType(wid) == entry_type::word &&
         !discard(wid, uniform(rng) /*, cur_weight_*/)) {
-      words.push_back(wid);
+      words->push_back(wid);
     }
-    if (ntokens > MAX_LINE_SIZE || token == EOS) break;
   }
-  *weight = cur_weight_;
-  return ntokens;
+  if (!discard(getId(EOS), uniform(rng) /*, cur_weight_*/)) {
+    words->push_back(getId(EOS));
+  }
+  return ntokens + 1;  // add EOS to the total count
 }
 
 int32_t Dictionary::getLine(std::istream& in, std::vector<int32_t>& words,
@@ -367,24 +365,24 @@ int32_t Dictionary::getLine(std::istream& in, std::vector<int32_t>& words,
   std::string token;
   int32_t ntokens = 0;
 
-  reset(in);
-  words.clear();
-  labels.clear();
-  while (readWord(in, token)) {
-    uint32_t h = hash(token);
-    int32_t wid = getId(token, h);
-    entry_type type = wid < 0 ? getType(token) : getType(wid);
+  // reset(in);
+  // words.clear();
+  // labels.clear();
+  // while (readWord(in, token)) {
+  //   uint32_t h = hash(token);
+  //   int32_t wid = getId(token, h);
+  //   entry_type type = wid < 0 ? getType(token) : getType(wid);
 
-    ntokens++;
-    if (type == entry_type::word) {
-      addSubwords(words, token, wid);
-      word_hashes.push_back(h);
-    } else if (type == entry_type::label && wid >= 0) {
-      labels.push_back(wid - nwords_);
-    }
-    if (token == EOS) break;
-  }
-  addWordNgrams(words, word_hashes, args_->wordNgrams);
+  //   ntokens++;
+  //   if (type == entry_type::word) {
+  //     addSubwords(words, token, wid);
+  //     word_hashes.push_back(h);
+  //   } else if (type == entry_type::label && wid >= 0) {
+  //     labels.push_back(wid - nwords_);
+  //   }
+  //   if (token == EOS) break;
+  // }
+  // addWordNgrams(words, word_hashes, args_->wordNgrams);
   return ntokens;
 }
 

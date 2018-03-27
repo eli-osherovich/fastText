@@ -74,7 +74,7 @@ class Dictionary {
   int32_t getId(const std::string&, uint32_t h) const;
   entry_type getType(int32_t) const;
   entry_type getType(const std::string&) const;
-  bool discard(int32_t, float, float boost=1.0f) const;
+  bool discard(int32_t, float, float boost = 1.0f) const;
   std::string getWord(int32_t) const;
   const std::vector<int32_t>& getSubwords(int32_t) const;
   const std::vector<int32_t> getSubwords(const std::string&) const;
@@ -84,25 +84,24 @@ class Dictionary {
   void computeSubwords(const std::string&, std::vector<int32_t>&,
                        std::vector<std::string>&) const;
   uint32_t hash(const std::string& str) const;
-  void add(const std::string&);
+  void add(const std::string&, float weight = 1.0f);
   bool readWord(std::istream&, std::string&) const;
   void readFromFile(std::istream&);
   std::string getLabel(int32_t) const;
   void save(std::ostream&) const;
   void load(std::istream&);
   std::vector<float> getCounts(entry_type) const;
+
+  int32_t convertLine(const std::string& line, std::minstd_rand&,
+                      std::vector<int32_t>* words, float* weight) const;
+
   int32_t getLine(std::istream&, std::vector<int32_t>&,
                   std::vector<int32_t>&) const;
-  int32_t getLine(std::istream&, std::vector<int32_t>&,
-                  std::minstd_rand&, float*) const;
   void threshold(int64_t, int64_t);
   void prune(std::vector<int32_t>&);
   bool isPruned() { return pruneidx_size_ >= 0; }
   void dump(std::ostream&) const;
 
-  mutable std::string cur_line_;
-  mutable std::deque<std::string> cur_words_;
-  mutable float cur_weight_ = 1.0f;
 };
 
 }  // namespace fasttext
