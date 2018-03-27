@@ -66,8 +66,8 @@ class Model {
   Model(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, std::shared_ptr<Args>,
         int32_t);
 
-  float binaryLogistic(int32_t, bool, float);
-  float negativeSampling(int32_t, float);
+  float binaryLogistic(int32_t, bool, float, float);
+  float negativeSampling(int32_t, float, float);
   float hierarchicalSoftmax(int32_t, float);
   float softmax(int32_t, float);
 
@@ -79,7 +79,7 @@ class Model {
            std::vector<std::pair<float, int32_t>>&, Vector&) const;
   void findKBest(int32_t, float, std::vector<std::pair<float, int32_t>>&,
                  Vector&, Vector&) const;
-  void update(const std::vector<int32_t>&, int32_t, float);
+  void update(const std::vector<int32_t>&, int32_t, float, float);
   void computeHidden(const std::vector<int32_t>&, Vector&) const;
   void computeOutputSoftmax(Vector&, Vector&) const;
   void computeOutputSoftmax();

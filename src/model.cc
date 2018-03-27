@@ -50,26 +50,29 @@ void Model::setQuantizePointer(std::shared_ptr<QMatrix> qwi,
   }
 }
 
-float Model::binaryLogistic(int32_t target, bool label, float lr) {
+float Model::binaryLogistic(int32_t target, bool label, float lr,
+                            float weight) {
   float score = sigmoid(wo_->dotRow(hidden_, target));
-  float alpha = lr * (float(label) - score);
+  // Correct would be to use weight,  however we use log(1+weight) to avoid
+  // steps that are too large.
+  float alpha = lr * std::log1p(weight) * (label - score);
   grad_.addRow(*wo_, target, alpha);
   wo_->addRow(hidden_, target, alpha);
   if (label) {
-    return -log(score);
+    return -weight * log(score);
   } else {
-    return -log(1.0 - score);
+    return -weight * log(1.0 - score);
   }
 }
 
-float Model::negativeSampling(int32_t target, float lr) {
+float Model::negativeSampling(int32_t target, float lr, float weight) {
   float loss = 0.0;
   grad_.zero();
   for (int32_t n = 0; n <= args_->neg; n++) {
     if (n == 0) {
-      loss += binaryLogistic(target, true, lr);
+      loss += binaryLogistic(target, true, lr, weight);
     } else {
-      loss += binaryLogistic(getNegative(target), false, lr);
+      loss += binaryLogistic(getNegative(target), false, lr, weight);
     }
   }
   return loss;
@@ -81,7 +84,7 @@ float Model::hierarchicalSoftmax(int32_t target, float lr) {
   const std::vector<bool>& binaryCode = codes[target];
   const std::vector<int32_t>& pathToRoot = paths[target];
   for (int32_t i = 0; i < pathToRoot.size(); i++) {
-    loss += binaryLogistic(pathToRoot[i], binaryCode[i], lr);
+    loss += binaryLogistic(pathToRoot[i], binaryCode[i], lr, 1.0f);
   }
   return loss;
 }
@@ -214,14 +217,14 @@ void Model::dfs(int32_t k, float threshold, int32_t node, float score,
   dfs(k, threshold, tree[node].right, score + std_log(f), heap, hidden);
 }
 
-void Model::update(const std::vector<int32_t>& input, int32_t target,
-                   float lr) {
+void Model::update(const std::vector<int32_t>& input, int32_t target, float lr,
+                   float weight) {
   assert(target >= 0);
   assert(target < osz_);
   if (input.size() == 0) return;
   computeHidden(input, hidden_);
   if (args_->loss == loss_name::ns) {
-    loss_ += negativeSampling(target, lr);
+    loss_ += negativeSampling(target, lr, weight);
   } else if (args_->loss == loss_name::hs) {
     loss_ += hierarchicalSoftmax(target, lr);
   } else {

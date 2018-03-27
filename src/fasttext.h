@@ -85,7 +85,7 @@ class FastText {
   void supervised(Model&, float, const std::vector<int32_t>&,
                   const std::vector<int32_t>&);
   void cbow(Model&, float, const std::vector<int32_t>&);
-  void skipgram(Model&, float, const std::vector<int32_t>&);
+  void skipgram(Model&, float, const std::vector<int32_t>&, float);
   std::vector<int32_t> selectEmbeddings(int32_t) const;
   void getSentenceVector(std::istream&, Vector&);
   void quantize(const Args);

@@ -35,6 +35,7 @@ Dictionary::Dictionary(std::shared_ptr<Args> args)
       nwords_(0),
       nlabels_(0),
       ntokens_(0),
+      total_weight_(0),
       pruneidx_size_(-1) {}
 
 Dictionary::Dictionary(std::shared_ptr<Args> args, std::istream& in)
@@ -43,6 +44,7 @@ Dictionary::Dictionary(std::shared_ptr<Args> args, std::istream& in)
       nwords_(0),
       nlabels_(0),
       ntokens_(0),
+      total_weight_(0),
       pruneidx_size_(-1) {
   load(in);
 }
@@ -63,6 +65,7 @@ int32_t Dictionary::find(const std::string& w, uint32_t h) const {
 void Dictionary::add(const std::string& w) {
   int32_t h = find(w);
   ntokens_++;
+  total_weight_ += cur_weight_;
   if (word2int_[h] == -1) {
     entry e;
     e.word = w;
@@ -115,11 +118,11 @@ void Dictionary::getSubwords(const std::string& word,
   }
 }
 
-bool Dictionary::discard(int32_t id, float rand) const {
+bool Dictionary::discard(int32_t id, float rand, float boost) const {
   assert(id >= 0);
   assert(id < nwords_);
   if (args_->model == model_name::sup) return false;
-  return rand > pdiscard_[id];
+  return rand > pdiscard_[id] * boost;
 }
 
 int32_t Dictionary::getId(const std::string& w, uint32_t h) const {
@@ -214,23 +217,21 @@ next_word:
     return true;
   }
 
-  // Special treatment for the first column that may be 'weight'.
-  if (args_->has_weight) {
-    if (getline(in, cur_line_, '\t')) {
-      cur_weight_ = std::stof(cur_line_);
-      std::cout << cur_weight_ << std::endl;
-    } else {
-      return false;
-    }
-  }
-  // The rest of the line is assumed to be a sequence of words.
-  if (getline(in, cur_line_)) {
-    boost::tokenizer<> tok(cur_line_);
-    cur_words_.assign(tok.begin(), tok.end());
-    cur_words_.push_back(EOS);
-  } else {
+  if (!getline(in, cur_line_)) {
     return false;
   }
+  // Special treatment for the first column that may be 'weight'.
+  if (args_->has_weight) {
+    std::size_t p;
+    cur_weight_ = std::stof(cur_line_, &p);
+    cur_line_.erase(0, p);
+  }
+
+  // The rest of the line is a sequence of words.
+  boost::tokenizer<> tok(cur_line_);
+  cur_words_.assign(tok.begin(), tok.end());
+  cur_words_.push_back(EOS);
+
   goto next_word;
 }
 
@@ -289,7 +290,7 @@ void Dictionary::threshold(int64_t t, int64_t tl) {
 void Dictionary::initTableDiscard() {
   pdiscard_.resize(size_);
   for (size_t i = 0; i < size_; i++) {
-    float f = float(words_[i].weight) / float(ntokens_);
+    float f = words_[i].weight / total_weight_;
     pdiscard_[i] = std::sqrt(args_->t / f) + args_->t / f;
   }
 }
@@ -338,7 +339,7 @@ void Dictionary::reset(std::istream& in) const {
 }
 
 int32_t Dictionary::getLine(std::istream& in, std::vector<int32_t>& words,
-                            std::minstd_rand& rng) const {
+                            std::minstd_rand& rng, float* weight) const {
   std::uniform_real_distribution<> uniform(0, 1);
   std::string token;
   int32_t ntokens = 0;
@@ -350,11 +351,13 @@ int32_t Dictionary::getLine(std::istream& in, std::vector<int32_t>& words,
     if (wid < 0) continue;
 
     ntokens++;
-    if (getType(wid) == entry_type::word && !discard(wid, uniform(rng))) {
+    if (getType(wid) == entry_type::word &&
+        !discard(wid, uniform(rng) /*, cur_weight_*/)) {
       words.push_back(wid);
     }
     if (ntokens > MAX_LINE_SIZE || token == EOS) break;
   }
+  *weight = cur_weight_;
   return ntokens;
 }
 
@@ -410,6 +413,7 @@ void Dictionary::save(std::ostream& out) const {
   out.write((char*)&nwords_, sizeof(nwords_));
   out.write((char*)&nlabels_, sizeof(nlabels_));
   out.write((char*)&ntokens_, sizeof(ntokens_));
+  out.write((char*)&total_weight_, sizeof(total_weight_));
   out.write((char*)&pruneidx_size_, sizeof(pruneidx_size_));
   for (int32_t i = 0; i < size_; i++) {
     entry e = words_[i];
@@ -430,6 +434,7 @@ void Dictionary::load(std::istream& in) {
   in.read((char*)&nwords_, sizeof(nwords_));
   in.read((char*)&nlabels_, sizeof(nlabels_));
   in.read((char*)&ntokens_, sizeof(ntokens_));
+  in.read((char*)&total_weight_, sizeof(total_weight_));
   in.read((char*)&pruneidx_size_, sizeof(pruneidx_size_));
   for (int32_t i = 0; i < size_; i++) {
     char c;

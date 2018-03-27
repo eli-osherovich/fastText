@@ -18,6 +18,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 
 namespace fasttext {
 
@@ -321,7 +323,7 @@ void FastText::supervised(Model& model, float lr,
   if (labels.size() == 0 || line.size() == 0) return;
   std::uniform_int_distribution<> uniform(0, labels.size() - 1);
   int32_t i = uniform(model.rng);
-  model.update(line, labels[i], lr);
+  model.update(line, labels[i], lr, 1.0f);
 }
 
 void FastText::cbow(Model& model, float lr, const std::vector<int32_t>& line) {
@@ -336,19 +338,19 @@ void FastText::cbow(Model& model, float lr, const std::vector<int32_t>& line) {
         bow.insert(bow.end(), ngrams.cbegin(), ngrams.cend());
       }
     }
-    model.update(bow, line[w], lr);
+    model.update(bow, line[w], lr, 1.0f);
   }
 }
 
 void FastText::skipgram(Model& model, float lr,
-                        const std::vector<int32_t>& line) {
+                        const std::vector<int32_t>& line, float weight) {
   std::uniform_int_distribution<> uniform(1, args_->ws);
   for (int32_t w = 0; w < line.size(); w++) {
     int32_t boundary = uniform(model.rng);
     const std::vector<int32_t>& ngrams = dict_->getSubwords(line[w]);
     for (int32_t c = -boundary; c <= boundary; c++) {
       if (c != 0 && w + c >= 0 && w + c < line.size()) {
-        model.update(ngrams, line[w + c], lr);
+        model.update(ngrams, line[w + c], lr, weight);
       }
     }
   }
@@ -567,11 +569,17 @@ void FastText::trainThread(int32_t threadId) {
       localTokenCount += dict_->getLine(ifs, line, labels);
       supervised(model, lr, line, labels);
     } else if (args_->model == model_name::cbow) {
-      localTokenCount += dict_->getLine(ifs, line, model.rng);
+      float weight;
+      localTokenCount += dict_->getLine(ifs, line, model.rng, &weight);
       cbow(model, lr, line);
     } else if (args_->model == model_name::sg) {
-      localTokenCount += dict_->getLine(ifs, line, model.rng);
-      skipgram(model, lr, line);
+      float weight;
+      localTokenCount += dict_->getLine(ifs, line, model.rng, &weight);
+      // for (auto ww : line)
+      //   std::cout << dict_->getWord(ww) << " ";
+      // std::cout << weight << std::endl;
+      // for (int i = 0; i < weight; ++i)
+      skipgram(model, lr, line, weight);
     }
     if (localTokenCount > args_->lrUpdateRate) {
       tokenCount_ += localTokenCount;
