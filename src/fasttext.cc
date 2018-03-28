@@ -265,10 +265,8 @@ std::vector<int32_t> FastText::selectEmbeddings(int32_t cutoff) const {
   input_->l2NormRow(norms);
   std::vector<int32_t> idx(input_->size(0), 0);
   std::iota(idx.begin(), idx.end(), 0);
-  auto eosid = dict_->getId(Dictionary::EOS);
-  std::sort(idx.begin(), idx.end(), [&norms, eosid](size_t i1, size_t i2) {
-    return eosid == i1 || (eosid != i2 && norms[i1] > norms[i2]);
-  });
+  std::sort(idx.begin(), idx.end(),
+            [&norms](size_t i1, size_t i2) { return norms[i1] > norms[i2]; });
   idx.erase(idx.begin() + cutoff, idx.end());
   return idx;
 }

@@ -24,7 +24,6 @@
 
 namespace fasttext {
 
-constexpr char Dictionary::EOS[];
 constexpr char Dictionary::BOW[];
 constexpr char Dictionary::EOW[];
 
@@ -97,9 +96,7 @@ const std::vector<int32_t> Dictionary::getSubwords(
     return getSubwords(i);
   }
   std::vector<int32_t> ngrams;
-  if (word != EOS) {
-    computeSubwords(BOW + word + EOW, ngrams);
-  }
+  computeSubwords(BOW + word + EOW, ngrams);
   return ngrams;
 }
 
@@ -113,9 +110,8 @@ void Dictionary::getSubwords(const std::string& word,
     ngrams.push_back(i);
     substrings.push_back(words_[i].word);
   }
-  if (word != EOS) {
-    computeSubwords(BOW + word + EOW, ngrams, substrings);
-  }
+  computeSubwords(BOW + word + EOW, ngrams, substrings);
+
 }
 
 bool Dictionary::discard(int32_t id, float rand, float boost) const {
@@ -203,9 +199,7 @@ void Dictionary::initNgrams() {
     std::string word = BOW + words_[i].word + EOW;
     words_[i].subwords.clear();
     words_[i].subwords.push_back(i);
-    if (words_[i].word != EOS) {
-      computeSubwords(word, words_[i].subwords);
-    }
+    computeSubwords(word, words_[i].subwords);
   }
 }
 
@@ -233,7 +227,6 @@ void Dictionary::readFromFile(std::istream& in) {
         threshold(minThreshold, minThreshold);
       }
     }
-    add(EOS, weight);
   }
   threshold(args_->minCount, args_->minCountLabel);
   initTableDiscard();
@@ -305,9 +298,7 @@ void Dictionary::addWordNgrams(std::vector<int32_t>& line,
 void Dictionary::addSubwords(std::vector<int32_t>& line,
                              const std::string& token, int32_t wid) const {
   if (wid < 0) {  // out of vocab
-    if (token != EOS) {
-      computeSubwords(BOW + token + EOW, line);
-    }
+    computeSubwords(BOW + token + EOW, line);
   } else {
     if (args_->maxn <= 0) {  // in vocab w/o subwords
       line.push_back(wid);
@@ -353,10 +344,7 @@ int32_t Dictionary::convertLine(const std::string& line, std::minstd_rand& rng,
       words->push_back(wid);
     }
   }
-  if (!discard(getId(EOS), uniform(rng) /*, cur_weight_*/)) {
-    words->push_back(getId(EOS));
-  }
-  return ntokens + 1;  // add EOS to the total count
+  return ntokens;
 }
 
 int32_t Dictionary::getLine(std::istream& in, std::vector<int32_t>& words,

@@ -61,7 +61,6 @@ class Dictionary {
                      const std::vector<int32_t>& hashes, int32_t n) const;
 
  public:
-  static constexpr char EOS[] = "</s>";
   static constexpr char BOW[] = "<";
   static constexpr char EOW[] = ">";
 
