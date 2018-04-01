@@ -74,7 +74,7 @@ while (<>) {
     s/&[^;]*;/ /g;          # remove URL encoded chars
     $_=" $_ ";
     chop;
-    print $_;
+    print "$_\n" unless length($_) == 0;
   }
 }
-' | normalize_text | awk '{if (NF>1) print;}' | tr -s " " | shuf > "${ROOT}"/wiki."${LANG}".txt 
+' | normalize_text | awk '{if (NF>1) print;}' | tr -s " " | shuf > "${ROOT}"/wiki."${LANG}".txt
