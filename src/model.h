@@ -80,6 +80,10 @@ class Model {
   void findKBest(int32_t, float, std::vector<std::pair<float, int32_t>>&,
                  Vector&, Vector&) const;
   void update(const std::vector<int32_t>&, int32_t, float, float);
+  void update(const std::vector<int32_t>& input,
+              const std::vector<int32_t>& line, int32_t t, int32_t boundary,
+              float lr, float weight);
+
   void computeHidden(const std::vector<int32_t>&, Vector&) const;
   void computeOutputSoftmax(Vector&, Vector&) const;
   void computeOutputSoftmax();

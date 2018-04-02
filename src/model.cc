@@ -240,6 +240,22 @@ void Model::update(const std::vector<int32_t>& input, int32_t target, float lr,
   }
 }
 
+void Model::update(const std::vector<int32_t>& input,
+                   const std::vector<int32_t>& line, int32_t t,
+                   int32_t boundary, float lr, float weight) {
+  if (input.size() == 0) return;
+  computeHidden(input, hidden_);
+  for (int32_t c = -boundary; c <= boundary; ++c) {
+    if (c != 0 && t + c >= 0 && t + c < line.size()) {
+      loss_ += negativeSampling(line[t + c], lr, weight);
+      ++nexamples_;
+      for (auto it = input.cbegin(); it != input.cend(); ++it) {
+        wi_->addRow(grad_, *it);
+      }
+    }
+  }
+}
+
 void Model::setTargetCounts(const std::vector<float>& weights) {
   assert(weights.size() == osz_);
   if (args_->loss == loss_name::ns) {
