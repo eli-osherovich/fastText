@@ -53,9 +53,9 @@ void Model::setQuantizePointer(std::shared_ptr<QMatrix> qwi,
 float Model::binaryLogistic(int32_t target, bool label, float lr,
                             float weight) {
   float score = sigmoid(wo_->dotRow(hidden_, target));
-  // Correct would be to use weight,  however we use log(1+weight) to avoid
-  // steps that are too large.
-  float alpha = lr * std::log1p(weight) * (label - score);
+  // Correct would be to use weight,  however we use log(e-1+weight) to avoid
+  // steps that are too large. For weight=1, the above expressions gives 1.
+  float alpha = lr * std::log(1.718281828459045 + weight) * (label - score);
   grad_.addRow(*wo_, target, alpha);
   wo_->addRow(hidden_, target, alpha);
   if (label) {
