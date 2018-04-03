@@ -243,16 +243,24 @@ void Model::update(const std::vector<int32_t>& input, int32_t target, float lr,
 void Model::update(const std::vector<int32_t>& input,
                    const std::vector<int32_t>& line, int32_t t,
                    int32_t boundary, float lr, float weight) {
-  if (input.size() == 0) return;
+  if (input.size() == 0 || line.size() < 2) return;
   computeHidden(input, hidden_);
+  grad_.zero();
   for (int32_t c = -boundary; c <= boundary; ++c) {
     if (c != 0 && t + c >= 0 && t + c < line.size()) {
-      loss_ += negativeSampling(line[t + c], lr, weight);
+      loss_ += binaryLogistic(line[t + c], true, lr, weight);
       ++nexamples_;
-      for (auto it = input.cbegin(); it != input.cend(); ++it) {
-        wi_->addRow(grad_, *it);
-      }
     }
+  }
+  for (int32_t n = 0; n < args_->neg; ++n) {
+    loss_ += binaryLogistic(getNegative(line[t]), false, lr, weight);
+  }
+
+  // Formally, the gradient must be divided by input.size().
+  // Empirical results, however, are better without it.
+  // grad_.mul(1.0 / input.size());
+  for (auto it = input.cbegin(); it != input.cend(); ++it) {
+    wi_->addRow(grad_, *it);
   }
 }
 
