@@ -24,7 +24,7 @@ Args::Args()
       epoch(5),
       minCount(5),
       minCountLabel(0),
-      neg(40),
+      neg(15),
       wordNgrams(1),
       loss(loss_name::ns),
       model(model_name::sg),
