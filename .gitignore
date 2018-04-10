@@ -5,3 +5,7 @@
 data
 fasttext
 result
+GPATH
+GRTAGS
+GTAGS
+*.orig
