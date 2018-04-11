@@ -95,9 +95,8 @@ const std::vector<int32_t> Dictionary::getSubwords(
   if (i >= 0) {
     return getSubwords(i);
   }
-  std::vector<int32_t> ngrams;
-  computeSubwords(BOW + word + EOW, ngrams);
-  return ngrams;
+
+  return computeSubwords(word, args_->minn, args_->maxn, BOW, EOW);
 }
 
 void Dictionary::getSubwords(const std::string& word,
@@ -111,7 +110,6 @@ void Dictionary::getSubwords(const std::string& word,
     substrings.push_back(words_[i].word);
   }
   computeSubwords(BOW + word + EOW, ngrams, substrings);
-
 }
 
 bool Dictionary::discard(int32_t id, float rand, float boost) const {
@@ -176,33 +174,39 @@ void Dictionary::computeSubwords(const std::string& word,
   }
 }
 
-void Dictionary::computeSubwords(const std::string& word,
-                                 std::vector<int32_t>& ngrams) const {
-  for (size_t i = 0; i < word.size(); i++) {
-    std::string ngram;
-    if ((word[i] & 0xC0) == 0x80) continue;
-    for (size_t j = i, n = 1; j < word.size() && n <= args_->maxn; n++) {
-      ngram.push_back(word[j++]);
-      while (j < word.size() && (word[j] & 0xC0) == 0x80) {
-        ngram.push_back(word[j++]);
+std::vector<int32_t> Dictionary::computeSubwords(const std::string& word,
+                                                 unsigned int min_len,
+                                                 unsigned int max_len,
+                                                 const std::string& bow,
+                                                 const std::string& eow) const {
+  std::vector<int32_t> res;
+  if (max_len > word.size()) {
+    max_len = word.size();
+  }
+  for (std::string::size_type len = min_len; len <= max_len; ++len) {
+    for (std::string::size_type start = 0; start <= word.size() - len;
+         ++start) {
+      std::string subword = word.substr(start, len);
+      if (start == 0) {
+        subword = bow + subword;
       }
-      if (n >= args_->minn && !(n == 1 && (i == 0 || j == word.size()))) {
-        int32_t h = hash(ngram) % args_->bucket;
-        pushHash(ngrams, h);
+      if (start + len == word.size()) {
+        subword += eow;
       }
+      int32_t h = hash(subword) % args_->bucket;
+      res.push_back(h);
     }
   }
+  return res;
 }
 
 void Dictionary::initNgrams() {
   for (size_t i = 0; i < size_; i++) {
-    std::string word = BOW + words_[i].word + EOW;
-    words_[i].subwords.clear();
+    words_[i].subwords =
+        computeSubwords(words_[i].word, args_->minn, args_->maxn, BOW, EOW);
     words_[i].subwords.push_back(i);
-    computeSubwords(word, words_[i].subwords);
   }
 }
-
 
 void Dictionary::readFromFile(std::istream& in) {
   std::string cur_line;
@@ -298,7 +302,7 @@ void Dictionary::addWordNgrams(std::vector<int32_t>& line,
 void Dictionary::addSubwords(std::vector<int32_t>& line,
                              const std::string& token, int32_t wid) const {
   if (wid < 0) {  // out of vocab
-    computeSubwords(BOW + token + EOW, line);
+    line = computeSubwords(token, args_->minn, args_->maxn, BOW, EOW);
   } else {
     if (args_->maxn <= 0) {  // in vocab w/o subwords
       line.push_back(wid);

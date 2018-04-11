@@ -79,9 +79,15 @@ class Dictionary {
   const std::vector<int32_t> getSubwords(const std::string&) const;
   void getSubwords(const std::string&, std::vector<int32_t>&,
                    std::vector<std::string>&) const;
-  void computeSubwords(const std::string&, std::vector<int32_t>&) const;
   void computeSubwords(const std::string&, std::vector<int32_t>&,
                        std::vector<std::string>&) const;
+
+  std::vector<int32_t> computeSubwords(const std::string& word,
+                                           unsigned int min_len,
+                                           unsigned int max_len,
+                                           const std::string& bow,
+                                           const std::string& eow) const;
+
   uint32_t hash(const std::string& str) const;
   void add(const std::string&, float weight = 1.0f);
   bool readWord(std::istream&, std::string&) const;
@@ -100,7 +106,6 @@ class Dictionary {
   void prune(std::vector<int32_t>&);
   bool isPruned() { return pruneidx_size_ >= 0; }
   void dump(std::ostream&) const;
-
 };
 
 }  // namespace fasttext
