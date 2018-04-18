@@ -38,7 +38,7 @@ The binary file can be used later to compute word vectors or to restart the opti
 
 ## Comparison with fastText
 
-Following are the results that were obtained (*) with latest versions of fastText and fasterText on a full dump of the English Wikipedia (4.5B words) on two popular benchmarks: WS353 and RW.
+Following are the results that were obtained (*) with latest versions of fastText (**) and fasterText (**) on a full dump of the English Wikipedia (4.5B words) on two popular benchmarks: WS353 and RW.
 
 ​Framework | Time (mins) | Embedding Dimensionality | Epochs | ​WS353 (OOV%) | ​RW (OOV%) | ​RW common (OOV%)
 ----------|-------------|--------------------------|--------|--------------|-----------|----------------------
@@ -49,3 +49,4 @@ Following are the results that were obtained (*) with latest versions of fastTex
 
 
 (*) The results above were obtained on an Amazon EC2 instance m5.x24 using 96 threads.
+(**) fasterText: 790c791d30c060a4a8c738c303ba859aed9eb766, fasttext: 3e64bf0f5b916532b34be6706c161d7d0a4957a4
