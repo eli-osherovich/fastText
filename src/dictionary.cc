@@ -22,6 +22,10 @@
 #include <stdexcept>
 #include <string>
 
+
+#define XXH_INLINE_ALL
+#include "xxhash.h"
+
 namespace fasttext {
 
 constexpr char Dictionary::BOW[];
@@ -144,14 +148,8 @@ std::string Dictionary::getWord(int32_t id) const {
   assert(id < size_);
   return words_[id].word;
 }
-
 uint32_t Dictionary::hash(const std::string& str) const {
-  uint32_t h = 2166136261;
-  for (size_t i = 0; i < str.size(); i++) {
-    h = h ^ uint32_t(str[i]);
-    h = h * 16777619;
-  }
-  return h;
+  return XXH32(str.data(), str.length(), /*seed*/ 0);
 }
 
 void Dictionary::computeSubwords(const std::string& word,
