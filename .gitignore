@@ -3,7 +3,7 @@
 *.bin
 *.vec
 data
-fasttext
+fastertext
 result
 GPATH
 GRTAGS

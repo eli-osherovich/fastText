@@ -13,10 +13,10 @@ OBJS = args.o dictionary.o productquantizer.o matrix.o qmatrix.o vector.o model.
 INCLUDES = -I. -I${IPPROOT}/include
 
 opt: CXXFLAGS += -DNDEBUG -O3 -funroll-loops
-opt: fasttext
+opt: fastertext
 
 debug: CXXFLAGS += -g -O0 -fno-inline
-debug: fasttext
+debug: fastertext
 
 args.o: src/args.cc src/args.h
 	$(CXX) $(CXXFLAGS) -c src/args.cc
@@ -48,8 +48,8 @@ fasttext.o: src/fasttext.cc src/*.h
 file_reader.o: src/file_reader.cpp src/file_reader.hpp
 	$(CXX) $(CXXFLAGS) -c src/file_reader.cpp
 
-fasttext: $(OBJS) src/fasttext.cc
-	$(CXX) $(CXXFLAGS) $(OBJS) -lipps -lm -ldl src/main.cc -o fasttext
+fastertext: $(OBJS) src/fasttext.cc
+	$(CXX) $(CXXFLAGS) $(OBJS) -lipps -lm -ldl src/main.cc -o fastertext
 
 clean:
-	rm -rf *.o fasttext
+	rm -rf *.o fastertext
