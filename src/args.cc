@@ -10,9 +10,9 @@
 #include "args.h"
 
 #include <stdlib.h>
-
 #include <iostream>
 #include <stdexcept>
+#include <thread>
 
 namespace fasttext {
 
@@ -31,7 +31,7 @@ Args::Args()
       bucket(2000000),
       minn(3),
       maxn(6),
-      thread(12),
+      thread(0),
       t(1e-4),
       label("__label__"),
       verbose(2),
@@ -56,9 +56,7 @@ std::string Args::lossToString(loss_name ln) const {
   return "Unknown loss!";  // should never happen
 }
 
-std::string Args::boolToString(bool b) const {
-  return b ? "true" : "false";
-}
+std::string Args::boolToString(bool b) const { return b ? "true" : "false"; }
 
 std::string Args::modelToString(model_name mn) const {
   switch (mn) {
@@ -183,6 +181,16 @@ void Args::parseArgs(const std::vector<std::string>& args) {
   if (wordNgrams <= 1 && maxn == 0) {
     bucket = 0;
   }
+
+  // Set number of threads automatically
+  if (thread == 0) {
+    thread = std::thread::hardware_concurrency();
+  }
+  if (thread == 0) {
+    std::cerr << "Could not determine default threads count" << std::endl;
+    thread = 1;
+  }
+  std::cout << "Set number of threads to " << thread << std::endl;
 }
 
 void Args::printHelp() {
@@ -231,7 +239,8 @@ void Args::printTrainingHelp() {
             << "]\n"
             << "  -loss               loss function {ns, hs, softmax} ["
             << lossToString(loss) << "]\n"
-            << "  -thread             number of threads [" << thread << "]\n"
+            << "  -thread             number of threads [" << thread
+            << "] (0 for default: #CPUs)\n"
             << "  -pretrainedVectors  pretrained word vectors for supervised "
                "learning ["
             << pretrainedVectors << "]\n"
